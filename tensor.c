@@ -244,7 +244,11 @@ void operation_print(operation_t *operation) {
                     break;
                 }
                 case(unary_reciprocal): {
-                    printf("U rcp [%lu, %lu, %lu, %lu]\n", operation->unary_out->sizes[_a], operation->unary_out->sizes[_z], operation->unary_out->sizes[_y], operation->unary_out->sizes[_x]);
+                    printf("U rcp %lu, %lu, %lu, %lu]\n", operation->unary_out->sizes[_a], operation->unary_out->sizes[_z], operation->unary_out->sizes[_y], operation->unary_out->sizes[_x]);
+                    break;
+                }
+                case(unary_tanh): {
+                    printf("U tnh %lu, %lu, %lu, %lu]\n", operation->unary_out->sizes[_a], operation->unary_out->sizes[_z], operation->unary_out->sizes[_y], operation->unary_out->sizes[_x]);
                     break;
                 }
             }
@@ -527,6 +531,18 @@ void operation_cpu_realize_unary(operation_t *operation) {
                     for(uint64_t y = 0; y < operation->unary_out->sizes[_y]; y++) {
                         for(uint64_t x = 0; x < operation->unary_out->sizes[_x]; x++) {
                             VIEW_AT_P(operation->unary_out, a, z, y, x) = 1 / VIEW_AT_P(operation->unary_out, a, z, y, x);
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        case(unary_tanh): {
+            for(uint64_t a = 0; a < operation->unary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->unary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->unary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->unary_out->sizes[_x]; x++) {
+                            VIEW_AT_P(operation->unary_out, a, z, y, x) = tanh(VIEW_AT_P(operation->unary_out, a, z, y, x));
                         }
                     }
                 }
@@ -844,10 +860,13 @@ void lazyop_reduce_config(lazyop_t *lazyop, lazyop_t *out_parent, lazyop_t *in_p
         lazyop_add_parent(lazyop, in_parent);
     }
     if(out_parent) {
-        // if(out_parent->base) {
-        //     lazyop->base = out_parent->base;
-        //     out_parent->base = NULL;
-        // }
+        /* Why was this commented out? */
+        /* Something about reduce operation not being able to be the base of the thing, but that doesn't make sense */
+        /* Man this is weird... It doesn't seem to change anything... But I don't get that at all tbh */
+        if(out_parent->base) {
+            lazyop->base = out_parent->base;
+            out_parent->base = NULL;
+        }
         lazyop_add_parent(lazyop, out_parent);
     }
     operation_reduce_config(lazyop->operation, type, out, in);
@@ -1023,6 +1042,15 @@ void tensor_reciprocal_unary(tensor_t *tensor) {
         tensor->lazyop->base = tensor;
     }
     lazyop_unary_config(tensor->lazyop, parent, unary_reciprocal, tensor->view, 0);
+}
+void tensor_tanh_unary(tensor_t *tensor) {
+    lazyop_t *parent = tensor->lazyop;
+    tensor->lazyop = calloc(1, sizeof(lazyop_t));
+    *tensor->lazyop = lazyop_alloc();
+    if(!parent) {
+        tensor->lazyop->base = tensor;
+    }
+    lazyop_unary_config(tensor->lazyop, parent, unary_tanh, tensor->view, 0);
 }
 
 void tensor_add_binary(tensor_t *out, tensor_t *in) {

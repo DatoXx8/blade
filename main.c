@@ -30,7 +30,7 @@ int main(void) {
     clock_t stop;
 
     const uint64_t ic = 2;
-    const uint64_t is = 4;
+    const uint64_t is = 6;
     layerconf_t in = {
         .type = input_e,
         .input_size = is,
@@ -42,7 +42,7 @@ int main(void) {
         .convolution_kernel_size = 2,
         .convolution_padding = 0,
         .convolution_stride = 1,
-        .activation_type = relu_e,
+        .activation_type = identity_e,
     };
     layerconf_t reduce = {
         .type = reduce_e,
@@ -53,16 +53,20 @@ int main(void) {
     layerconf_t dense = {
         .type = dense_e,
         .dense_size = 3,
-        .activation_type = identity_e,
+        .activation_type = sigmoid_e,
     };
 
-    const uint64_t layers = 2;
+    const uint64_t layers = 6;
     nnconf_t nnconf = {
         .layers = layers,
         .layerconf = calloc(layers, sizeof(layerconf_t)),
     };
     nnconf.layerconf[0] = in;
-    nnconf.layerconf[1] = dense;
+    nnconf.layerconf[1] = conv;
+    nnconf.layerconf[2] = conv;
+    nnconf.layerconf[3] = conv;
+    nnconf.layerconf[4] = reduce;
+    nnconf.layerconf[5] = dense;
 
     tensor_t input = tensor_alloc(1, ic, is, is);
     nn_t nn = nn_alloc(&nnconf);
@@ -74,6 +78,24 @@ int main(void) {
     nn_evaluate(&nn, &input);
     TENSOR_PRINT_P(nn.layer[0].activation);
     TENSOR_PRINT_P(nn.layer[1].activation);
+    TENSOR_PRINT_P(nn.layer[2].activation);
+    TENSOR_PRINT_P(nn.layer[3].activation);
+    TENSOR_PRINT_P(nn.layer[4].activation);
+    TENSOR_PRINT_P(nn.layer[5].activation);
+    nn_evaluate(&nn, &input);
+    TENSOR_PRINT_P(nn.layer[0].activation);
+    TENSOR_PRINT_P(nn.layer[1].activation);
+    TENSOR_PRINT_P(nn.layer[2].activation);
+    TENSOR_PRINT_P(nn.layer[3].activation);
+    TENSOR_PRINT_P(nn.layer[4].activation);
+    TENSOR_PRINT_P(nn.layer[5].activation);
+    nn_evaluate(&nn, &input);
+    TENSOR_PRINT_P(nn.layer[0].activation);
+    TENSOR_PRINT_P(nn.layer[1].activation);
+    TENSOR_PRINT_P(nn.layer[2].activation);
+    TENSOR_PRINT_P(nn.layer[3].activation);
+    TENSOR_PRINT_P(nn.layer[4].activation);
+    TENSOR_PRINT_P(nn.layer[5].activation);
 
     STOP_TIMING;
 

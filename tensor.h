@@ -1,10 +1,7 @@
 #ifndef TENSOR_H_
 #define TENSOR_H_
 
-/* TODO: Figure out ternary, movement and buffer ops from Tinygrad (probably only useful for GPU) */
-
 #include <stdint.h>
-/* #include <math.h> */
 #include <CL/cl.h>
 
 #define START_TIMING start = clock() /* Requires `clock_t start` to be defined */
@@ -59,7 +56,7 @@ enum operation_e {
     operation_unary = 0, operation_binary, operation_move, operation_reduce
 };
 enum unary_e {
-    unary_add = 0, unary_multiply, unary_subtract, unary_divide, unary_set, unary_sqrt, unary_log, unary_exp, unary_max, unary_min, unary_random, unary_negate, unary_reciprocal
+    unary_add = 0, unary_multiply, unary_subtract, unary_divide, unary_set, unary_sqrt, unary_log, unary_exp, unary_max, unary_min, unary_random, unary_negate, unary_reciprocal, unary_tanh
 };
 enum binary_e {
     binary_add = 0, binary_multiply, binary_subtract, binary_divide, binary_max, binary_min, binary_copy/* , binary_mod, binary_complete */
@@ -158,6 +155,7 @@ extern void tensor_min_unary(tensor_t *tensor, double value);
 extern void tensor_random_unary(tensor_t *tensor);
 extern void tensor_negate_unary(tensor_t *tensor);
 extern void tensor_reciprocal_unary(tensor_t *tensor);
+extern void tensor_tanh_unary(tensor_t *tensor);
 
 extern void tensor_add_binary(tensor_t *out, tensor_t *in);
 extern void tensor_subtract_binary(tensor_t *out, tensor_t *in);

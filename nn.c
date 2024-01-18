@@ -446,11 +446,13 @@ void layer_activate(layer_t *layer) {
             break;
         }
         case(silu_e): {
+            /* Not sure how to this one... */
             fprintf(stderr, "ERROR: SiLU is not yet implemented!\n");
             exit(1);
             break;
         }
         case(gelu_e): {
+            /* Not sure how to this one either... */
             fprintf(stderr, "ERROR: GeLU is not yet implemented!\n");
             exit(1);
             break;
@@ -465,32 +467,32 @@ void layer_activate(layer_t *layer) {
 void layer_activate_derivative(layer_t *layer) {
     switch(layer->activation_type) {
         case(identity_e): {
-            fprintf(stderr, "ERROR: Identity is not yet implemented!\n");
+            tensor_set_unary(layer->activation_grad, 1);
             exit(1);
             break;
         }
         case(sigmoid_e): {
-            fprintf(stderr, "ERROR: Sigmoid is not yet implemented!\n");
+            fprintf(stderr, "ERROR: Sigmoid derivative is not yet implemented!\n");
             exit(1);
             break;
         }
         case(relu_e): {
-            fprintf(stderr, "ERROR: ReLU is not yet implemented!\n");
+            fprintf(stderr, "ERROR: ReLU derivative is not yet implemented!\n");
             exit(1);
             break;
         }
         case(silu_e): {
-            fprintf(stderr, "ERROR: SiLU is not yet implemented!\n");
+            fprintf(stderr, "ERROR: SiLU derivative is not yet implemented!\n");
             exit(1);
             break;
         }
         case(gelu_e): {
-            fprintf(stderr, "ERROR: GeLU is not yet implemented!\n");
+            fprintf(stderr, "ERROR: GeLU derivative is not yet implemented!\n");
             exit(1);
             break;
         }
         case(tanh_e): {
-            fprintf(stderr, "ERROR: Tanh is not yet implemented!\n");
+            fprintf(stderr, "ERROR: Tanh derivative is not yet implemented!\n");
             exit(1);
             break;
         }

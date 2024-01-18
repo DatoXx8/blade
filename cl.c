@@ -14,8 +14,9 @@ cl_device_id create_device(void) {
     }
     err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &dev, NULL);
     if(err == CL_DEVICE_NOT_FOUND) {
-        fprintf(stderr, "WARNING: Could not access the GPU\n");
+        fprintf(stderr, "ERROR: Could not access the GPU\n");
         err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_CPU, 1, &dev, NULL);
+        exit(1);
     }
     if(err < 0) {
         fprintf(stderr, "ERROR: Could not access any devices\n");
