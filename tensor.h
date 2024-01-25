@@ -39,7 +39,7 @@ typedef struct {
 extern view_t view_alloc(void);
 extern void view_configure(view_t *view, buffer_t *buffer, uint64_t a_start, uint64_t z_start, uint64_t y_start, uint64_t x_start, uint64_t a_size, uint64_t z_size, uint64_t y_size, uint64_t x_size);
 extern void view_move(view_t *view, uint64_t a, uint64_t z, uint64_t y, uint64_t x);
-extern void view_reshape(view_t *view, uint64_t a, uint64_t z, uint64_t y, uint64_t x);
+extern void view_resize(view_t *view, uint64_t a, uint64_t z, uint64_t y, uint64_t x);
 extern void view_free(view_t *view);
 extern void view_print(view_t *view, uint64_t padding, uint64_t offset, const char *name);
 extern void view_preview(view_t *view, uint64_t padding, uint64_t offset, const char *name);
@@ -56,13 +56,13 @@ enum operation_e {
     operation_unary = 0, operation_binary, operation_move, operation_reduce
 };
 enum unary_e {
-    unary_add = 0, unary_multiply, unary_subtract, unary_divide, unary_set, unary_sqrt, unary_log, unary_exp, unary_max, unary_min, unary_random, unary_negate, unary_reciprocal, unary_tanh
+    unary_add = 0, unary_multiply, unary_subtract, unary_divide, unary_set, unary_sqrt, unary_log, unary_exp, unary_max, unary_min, unary_random, unary_negate, unary_reciprocal, unary_tanh, unary_sign, unary_square
 };
 enum binary_e {
     binary_add = 0, binary_multiply, binary_subtract, binary_divide, binary_max, binary_min, binary_copy/* , binary_mod, binary_complete */
 };
 enum move_e {
-    move_reshape = 0, move_index, move_permute, move_expand, move_pad, move_shrink/* , move_stride, move_as_strided */
+    move_resize = 0, move_index, move_reshape, move_permute, move_expand, move_pad, move_shrink/* , move_stride, move_as_strided */
 };
 enum reduce_e {
     reduce_sum = 0, reduce_max, reduce_min, reduce_avg
@@ -156,6 +156,8 @@ extern void tensor_random_unary(tensor_t *tensor);
 extern void tensor_negate_unary(tensor_t *tensor);
 extern void tensor_reciprocal_unary(tensor_t *tensor);
 extern void tensor_tanh_unary(tensor_t *tensor);
+extern void tensor_sign_unary(tensor_t *tensor);
+extern void tensor_square_unary(tensor_t *tensor);
 
 extern void tensor_add_binary(tensor_t *out, tensor_t *in);
 extern void tensor_subtract_binary(tensor_t *out, tensor_t *in);
@@ -165,8 +167,9 @@ extern void tensor_max_binary(tensor_t *out, tensor_t *in);
 extern void tensor_min_binary(tensor_t *out, tensor_t *in);
 extern void tensor_copy_binary(tensor_t *out, tensor_t *in);
 
-extern void tensor_reshape_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uint64_t x);
+extern void tensor_resize_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uint64_t x);
 extern void tensor_index_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uint64_t x);
+extern void tensor_reshape_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uint64_t x);
 extern void tensor_permute_move(tensor_t *out, tensor_t *in);
 extern void tensor_expand_move(tensor_t *out, tensor_t *in);
 extern void tensor_pad_move(tensor_t *out, tensor_t *in);

@@ -7,6 +7,74 @@
 #include "nn.h"
 #include "tensor.h"
 
+void tensor_activate(tensor_t *activation, enum activation_e type) {
+    switch(type) {
+        case(activation_identity): {
+            break;
+        }
+        case(activation_sigmoid): {
+            tensor_negate_unary(activation);
+            tensor_exp_unary(activation);
+            tensor_add_unary(activation, 1);
+            tensor_reciprocal_unary(activation);
+            break;
+        }
+        case(activation_relu): {
+            tensor_max_unary(activation, 0);
+            break;
+        }
+        case(activation_silu): {
+            fprintf(stderr, "ERROR: SiLU is not implemented yet!\n");
+            exit(1);
+            break;
+        }
+        case(activation_gelu): {
+            fprintf(stderr, "ERROR: GeLU is not implemented yet!\n");
+            exit(1);
+            break;
+        }
+        case(activation_tanh): {
+            fprintf(stderr, "ERROR: Tanh is not implemented yet!\n");
+            exit(1);
+            break;
+        }
+    }
+}
+void tensor_activation_derivative(tensor_t *derivative, enum activation_e type, tensor_t *activation) {
+    switch(type) {
+        case(activation_identity): {
+            tensor_set_unary(derivative, 1);
+            break;
+        }
+        case(activation_sigmoid): {
+            tensor_set_unary(derivative, 1);
+            tensor_subtract_binary(derivative, activation);
+            tensor_multiply_binary(derivative, activation);
+            break;
+        }
+        case(activation_relu): {
+            tensor_copy_binary(derivative, activation);
+            tensor_sign_unary(derivative);
+            break;
+        }
+        case(activation_silu): {
+            fprintf(stderr, "ERROR: SiLU derivative is not yet implemented!\n");
+            exit(1);
+            break;
+        }
+        case(activation_gelu): {
+            fprintf(stderr, "ERROR: GeLU derivative is not yet implemented!\n");
+            exit(1);
+            break;
+        }
+        case(activation_tanh): {
+            fprintf(stderr, "ERROR: Tanh derivative is not yet implemented!\n");
+            exit(1);
+            break;
+        }
+    }
+}
+
 dense_t dense_alloc(uint64_t previous_size, uint64_t size) {
     dense_t dense = {
         .previous_size = previous_size,
@@ -17,6 +85,7 @@ dense_t dense_alloc(uint64_t previous_size, uint64_t size) {
         .biases_grad = calloc(1, sizeof(tensor_t)),
 
         .multiply_temp = calloc(1, sizeof(tensor_t)),
+        .activation_derivative = calloc(1, sizeof(tensor_t)),
     };
     *dense.weights = tensor_alloc(1, 1, previous_size, size);
     *dense.weights_grad = tensor_alloc(1, 1, previous_size, size);
@@ -24,6 +93,7 @@ dense_t dense_alloc(uint64_t previous_size, uint64_t size) {
     *dense.biases_grad = tensor_alloc(1, 1, 1, size);
 
     *dense.multiply_temp = tensor_alloc(1, 1, previous_size, 1);
+    *dense.activation_derivative = tensor_alloc(1, 1, 1, size);
 
     return(dense);
 }
@@ -32,10 +102,12 @@ void dense_free(dense_t *dense) {
     tensor_free(dense->weights_grad);
     tensor_free(dense->biases);
     tensor_free(dense->biases_grad);
+    tensor_free(dense->activation_derivative);
     free(dense->weights);
     free(dense->weights_grad);
     free(dense->biases);
     free(dense->biases_grad);
+    free(dense->activation_derivative);
 
     tensor_free(dense->multiply_temp);
     free(dense->multiply_temp);
@@ -45,29 +117,71 @@ void dense_forward(tensor_t *previous_activation, dense_t *dense, tensor_t *acti
 
     tensor_set_unary(activation, 0);
 
-    tensor_reshape_move(dense->weights, 1, 1, dense->previous_size, 1);
+    tensor_resize_move(dense->weights, 1, 1, dense->previous_size, 1);
     tensor_index_move(dense->weights, 0, 0, 0, 0);
-    tensor_reshape_move(activation, 1, 1, 1, 1);
+    tensor_resize_move(activation, 1, 1, 1, 1);
     tensor_index_move(activation, 0, 0, 0, 0);
 
     for(uint64_t i = 0; i < dense->size; i++) {
         tensor_index_move(dense->weights, 0, 0, 0, i);
         tensor_index_move(activation, 0, 0, 0, i);
-        tensor_sum_reduce(activation, dense->weights);
         tensor_copy_binary(dense->multiply_temp, previous_activation);
         tensor_multiply_binary(dense->multiply_temp, dense->weights);
         tensor_sum_reduce(activation, dense->multiply_temp);
     }
 
-    tensor_reshape_move(dense->weights, 1, 1, dense->previous_size, dense->size);
+    tensor_resize_move(dense->weights, 1, 1, dense->previous_size, dense->size);
     tensor_index_move(dense->weights, 0, 0, 0, 0);
-    tensor_reshape_move(activation, 1, 1, 1, dense->size);
+    tensor_resize_move(activation, 1, 1, 1, dense->size);
     tensor_index_move(activation, 0, 0, 0, 0);
     tensor_add_binary(activation, dense->biases);
 }
-/* TODO: Implement this. */
-void dense_backward(tensor_t *previous_grad, dense_t *dense, tensor_t *grad, tensor_t *activation) {
-    tensor_copy_binary(dense->biases_grad, activation);
+/* TODO: Finish this. Might need to change to copys to adds and 0 initialise the grads at the start of backprop to make sure that multiply training samples can be backproped after eachother.*/
+/* Previous here means the previous layer. */
+void dense_backward(tensor_t *previous_grad, tensor_t *previous_activation, dense_t *dense, enum activation_e type, tensor_t *grad, tensor_t *activation) {
+    uint64_t pa = previous_activation->view->buffer->sizes[_a];
+    uint64_t pz = previous_activation->view->buffer->sizes[_z];
+    uint64_t py = previous_activation->view->buffer->sizes[_y];
+    uint64_t px = previous_activation->view->buffer->sizes[_x];
+
+    tensor_activation_derivative(dense->activation_derivative, type, activation);
+    /* Bias */
+    tensor_copy_binary(dense->biases_grad, grad);
+    tensor_multiply_binary(dense->biases_grad, dense->activation_derivative);
+    /* Weigths */
+    tensor_reshape_move(previous_activation, 1, 1, dense->previous_size, 1);
+    tensor_index_move(previous_activation, 0, 0, 0, 0);
+    tensor_resize_move(dense->weights_grad, 1, 1, dense->previous_size, 1);
+    for(uint64_t i = 0; i < dense->size; i++) {
+        tensor_index_move(dense->weights_grad, 0, 0, 0, i);
+        tensor_copy_binary(dense->weights_grad, previous_activation);
+    }
+    tensor_reshape_move(previous_activation, pa, pz, py, px);
+    tensor_index_move(previous_activation, 0, 0, 0, 0);
+
+    tensor_resize_move(dense->weights_grad, 1, 1, 1, dense->size);
+    for(uint64_t i = 0; i < dense->previous_size; i++) {
+        tensor_index_move(dense->weights_grad, 0, 0, i, 0);
+        tensor_multiply_binary(dense->weights_grad, grad);
+        tensor_multiply_binary(dense->weights_grad, dense->activation_derivative);
+    }
+
+    tensor_resize_move(dense->weights_grad, 1, 1, dense->previous_size, dense->size);
+    tensor_index_move(dense->weights_grad, 0, 0, 0, 0);
+    /* Next grad */
+    // tensor_reshape_move(previous_grad, 1, 1, 1, dense->previous_size);
+    // tensor_resize_move(previous_grad, 1, 1, 1, 1);
+    // tensor_resize_move(dense->weights, 1, 1, 1, dense->size);
+    // for(uint64_t i = 0; i < dense->previous_size; i++) {
+    //     tensor_index_move(previous_grad, 0, 0, 0, i);
+    //     tensor_index_move(dense->weights, 0, 0, i, 0);
+    //     tensor_sum_reduce(previous_grad, dense->weights);
+    // }
+    // tensor_resize_move(dense->weights, 1, 1, dense->previous_size, dense->size);
+    // tensor_index_move(dense->weights, 0, 0, 0, 0);
+
+    // tensor_reshape_move(previous_grad, pa, pz, py, px);
+    // tensor_index_move(previous_grad, 0, 0, 0, 0);
 }
 void dense_print_shape(dense_t *dense, uint64_t padding, uint64_t offset, const char *name) {
     if(strcmp(name, "") != 0) {
@@ -107,8 +221,9 @@ void dense_print_grad(dense_t *dense, uint64_t padding, uint64_t offset, const c
     view_print(dense->weights_grad->view, padding, padding + offset, "weights_grad");
 }
 
-convolution_t convolution_alloc(uint64_t channels, uint64_t filters, uint64_t kernel_size, uint64_t padding, uint64_t stride) {
+convolution_t convolution_alloc(uint64_t input_size, uint64_t channels, uint64_t filters, uint64_t kernel_size, uint64_t padding, uint64_t stride) {
     convolution_t convolution = {
+        .input_size = input_size,
         .channels = channels,
         .filters = filters,
         .kernel_size = kernel_size,
@@ -129,6 +244,7 @@ convolution_t convolution_alloc(uint64_t channels, uint64_t filters, uint64_t ke
     *convolution.biases_grad = tensor_alloc(1, filters, 1, 1);
 
     *convolution.multiply_temp = tensor_alloc(channels, 1, kernel_size, kernel_size);
+    *convolution.padded_in = tensor_alloc(1, channels, input_size + padding * 2, input_size + padding * 2);
     *convolution.sum_temp = tensor_alloc(1, 1, 1, 1);
 
     return(convolution);
@@ -147,11 +263,12 @@ void convolution_free(convolution_t *convolution) {
     free(convolution->multiply_temp);
     free(convolution->sum_temp);
 }
-/* TODO: Implement padding. */
 /* NOTE: Not tested but the output looks about right (meaning not zero and not a obvious combination of the input and bias terms). */
 void convolution_forward(tensor_t *previous_activation, convolution_t *convolution, tensor_t *activation) {
-    uint64_t max_y = previous_activation->view->buffer->sizes[_y] - convolution->kernel_size + 1;
-    uint64_t max_x = previous_activation->view->buffer->sizes[_x] - convolution->kernel_size + 1;
+    // uint64_t max_y = previous_activation->view->buffer->sizes[_y] - convolution->kernel_size + 1;
+    // uint64_t max_x = previous_activation->view->buffer->sizes[_x] - convolution->kernel_size + 1;
+    uint64_t max_y = previous_activation->view->buffer->sizes[_y] - convolution->kernel_size + 2 * convolution->padding + 1;
+    uint64_t max_x = previous_activation->view->buffer->sizes[_x] - convolution->kernel_size + 2 * convolution->padding + 1;
     uint64_t out_y;
     uint64_t out_x;
     uint64_t a_a = activation->view->buffer->sizes[_a];
@@ -165,10 +282,14 @@ void convolution_forward(tensor_t *previous_activation, convolution_t *convoluti
 
     tensor_set_unary(activation, 0);
 
-    tensor_reshape_move(convolution->weights, convolution->channels, 1, convolution->kernel_size, convolution->kernel_size);
-    tensor_reshape_move(previous_activation, a_pa, 1, convolution->kernel_size, convolution->kernel_size);
-    tensor_reshape_move(activation, 1, 1, 1, 1);
-    tensor_reshape_move(convolution->biases, 1, 1, 1, 1);
+    tensor_index_move(convolution->padded_in, 0, 0, convolution->padding, convolution->padding);
+    tensor_copy_binary(convolution->padded_in, previous_activation);
+
+    tensor_resize_move(convolution->weights, convolution->channels, 1, convolution->kernel_size, convolution->kernel_size);
+    // tensor_resize_move(previous_activation, 1, z_pa, convolution->kernel_size, convolution->kernel_size);
+    tensor_resize_move(convolution->padded_in, 1, z_pa, convolution->kernel_size, convolution->kernel_size);
+    tensor_resize_move(activation, 1, 1, 1, 1);
+    tensor_resize_move(convolution->biases, 1, 1, 1, 1);
 
     for(uint64_t filter = 0; filter < convolution->filters; filter++) {
         out_y = 0;
@@ -177,9 +298,10 @@ void convolution_forward(tensor_t *previous_activation, convolution_t *convoluti
         for(uint64_t y = 0; y < max_y; y += convolution->stride) {
             out_x = 0;
             for(uint64_t x = 0; x < max_x; x += convolution->stride) {
-                tensor_index_move(previous_activation, 0, 0, y, x);
+                // tensor_index_move(previous_activation, 0, 0, y, x);
+                tensor_index_move(convolution->padded_in, 0, 0, y, x);
                 tensor_index_move(activation, 0, filter, out_y, out_x++);
-                tensor_copy_binary(convolution->multiply_temp, previous_activation);
+                tensor_copy_binary(convolution->multiply_temp, convolution->padded_in);
                 tensor_multiply_binary(convolution->multiply_temp, convolution->weights);
                 tensor_sum_reduce(convolution->sum_temp, convolution->multiply_temp);
                 tensor_copy_binary(activation, convolution->biases);
@@ -189,18 +311,19 @@ void convolution_forward(tensor_t *previous_activation, convolution_t *convoluti
         }
     }
 
-    tensor_reshape_move(activation, a_a, z_a, y_a, x_a);
+    tensor_resize_move(activation, a_a, z_a, y_a, x_a);
     tensor_index_move(activation, 0, 0, 0, 0);
-    tensor_reshape_move(previous_activation, a_pa, z_pa, y_pa, x_pa);
-    tensor_index_move(previous_activation, 0, 0, 0, 0);
-    tensor_reshape_move(convolution->biases, 1, convolution->filters, 1, 1);
+    // tensor_resize_move(previous_activation, a_pa, z_pa, y_pa, x_pa);
+    // tensor_index_move(previous_activation, 0, 0, 0, 0);
+    tensor_resize_move(convolution->biases, 1, convolution->filters, 1, 1);
     tensor_index_move(convolution->biases, 0, 0, 0, 0);
-    tensor_reshape_move(convolution->weights, convolution->channels, convolution->filters, convolution->kernel_size, convolution->kernel_size);
+    tensor_resize_move(convolution->weights, convolution->channels, convolution->filters, convolution->kernel_size, convolution->kernel_size);
     tensor_index_move(convolution->weights, 0, 0, 0, 0);
+    tensor_resize_move(convolution->padded_in, 1, convolution->channels, y_pa + 2 * convolution->padding, x_pa + 2 * convolution->padding);
+    tensor_index_move(convolution->padded_in, 0, 0, 0, 0);
 }
-/* TODO: Implement padding. */
 /* TODO: Implement this. */
-void convolution_backward(tensor_t *previous_grad, convolution_t *convolution, tensor_t *grad, tensor_t *activation) {
+void convolution_backward() {
 }
 void convolution_print_shape(convolution_t *convolution, uint64_t padding, uint64_t offset, const char *name) {
     if(strcmp(name, "") != 0) {
@@ -271,8 +394,8 @@ void reduce_forward(tensor_t *previous_activation, reduce_t *reduce, tensor_t *a
 
     tensor_set_unary(activation, 0);
 
-    tensor_reshape_move(activation, 1, 1, 1, 1);
-    tensor_reshape_move(previous_activation, 1, 1, reduce->kernel_size, reduce->kernel_size);
+    tensor_resize_move(activation, 1, 1, 1, 1);
+    tensor_resize_move(previous_activation, 1, 1, reduce->kernel_size, reduce->kernel_size);
 
     for(uint64_t filter = 0; filter < activation->view->sizes[_z]; filter++) {
         out_y = 0;
@@ -300,13 +423,13 @@ void reduce_forward(tensor_t *previous_activation, reduce_t *reduce, tensor_t *a
         }
     }
 
-    tensor_reshape_move(activation, a_a, z_a, y_a, x_a);
+    tensor_resize_move(activation, a_a, z_a, y_a, x_a);
     tensor_index_move(activation, 0, 0, 0, 0);
-    tensor_reshape_move(previous_activation, a_pa, z_pa, y_pa, x_pa);
+    tensor_resize_move(previous_activation, a_pa, z_pa, y_pa, x_pa);
     tensor_index_move(previous_activation, 0, 0, 0, 0);
 }
 /* TODO: Implement this. */
-void reduce_backward(tensor_t *previous_grad, reduce_t *reduce, tensor_t *grad, tensor_t *activation) {
+void reduce_backward() {
 }
 void reduce_print_shape(reduce_t *reduce, uint64_t padding, uint64_t offset, const char *name) {
     printf("%*s%s reduce shape\n", (int) (offset), "", name);
@@ -322,17 +445,17 @@ void reduce_print_shape(reduce_t *reduce, uint64_t padding, uint64_t offset, con
 layer_t layer_alloc(layerconf_t *layerconf) {
     layer_t layer = {0};
     switch(layerconf->type) {
-        case(input_e): {
-            layer.type = input_e;
-            layer.activation_type = identity_e;
+        case(layer_input): {
+            layer.type = layer_input;
+            layer.activation_type = activation_identity;
             layer.activation = calloc(1, sizeof(tensor_t));
             *layer.activation = tensor_alloc(1, layerconf->input_channels, layerconf->input_size, layerconf->input_size);
             layer.activation_grad = calloc(1, sizeof(tensor_t)); // NOT NECESSARY
             *layer.activation_grad = tensor_alloc(1, layerconf->input_channels, layerconf->input_size, layerconf->input_size); // NOT NECESSARY
             break;
         }
-        case(dense_e): {
-            layer.type = dense_e;
+        case(layer_dense): {
+            layer.type = layer_dense;
             layer.activation_type = layerconf->activation_type;
             layer.activation = calloc(1, sizeof(tensor_t));
             *layer.activation = tensor_alloc(1, 1, 1, layerconf->dense_size);
@@ -342,8 +465,8 @@ layer_t layer_alloc(layerconf_t *layerconf) {
             *layer.dense = dense_alloc(layerconf->dense_previous_size, layerconf->dense_size);
             break;
         }
-        case(convolution_e): {
-            layer.type = convolution_e;
+        case(layer_convolution): {
+            layer.type = layer_convolution;
             layer.activation_type = layerconf->activation_type;
             uint64_t new_size = CONVOLUTION_OUTPUT_SIZE(layerconf->convolution_previous_size, layerconf->convolution_padding, layerconf->convolution_kernel_size, layerconf->convolution_stride);
             layer.activation = calloc(1, sizeof(tensor_t));
@@ -351,11 +474,11 @@ layer_t layer_alloc(layerconf_t *layerconf) {
             layer.activation_grad = calloc(1, sizeof(tensor_t));
             *layer.activation_grad = tensor_alloc(1, layerconf->convolution_filters, new_size, new_size);
             layer.convolution = calloc(1, sizeof(convolution_t));
-            *layer.convolution = convolution_alloc(layerconf->convolution_channels, layerconf->convolution_filters, layerconf->convolution_kernel_size, layerconf->convolution_padding, layerconf->convolution_stride);
+            *layer.convolution = convolution_alloc(layerconf->convolution_previous_size, layerconf->convolution_channels, layerconf->convolution_filters, layerconf->convolution_kernel_size, layerconf->convolution_padding, layerconf->convolution_stride);
             break;
         }
-        case(reduce_e): {
-            layer.type = reduce_e;
+        case(layer_reduce): {
+            layer.type = layer_reduce;
             layer.activation_type = layerconf->activation_type;
             uint64_t new_size = REDUCE_OUTPUT_SIZE(layerconf->reduce_previous_size, layerconf->reduce_kernel_size, layerconf->reduce_stride);
             layer.activation = calloc(1, sizeof(tensor_t));
@@ -366,7 +489,7 @@ layer_t layer_alloc(layerconf_t *layerconf) {
             *layer.reduce = reduce_alloc(layerconf->reduce_kernel_size, layerconf->reduce_stride, layerconf->reduce_type);
             break;
         }
-        case(residual_e): {
+        case(layer_residual): {
             fprintf(stderr, "ERROR: Residual connections not yet implemented!\n");
             exit(1);
             break;
@@ -377,7 +500,7 @@ layer_t layer_alloc(layerconf_t *layerconf) {
 /* TODO: Fix this. Doesn't really work cuz something still leaks. */
 void layer_free(layer_t *layer) {
     switch(layer->type) {
-        case(input_e): {
+        case(layer_input): {
             tensor_free(layer->activation);
             free(layer->activation);
             layer->activation = NULL;
@@ -386,7 +509,7 @@ void layer_free(layer_t *layer) {
             layer->activation_grad = NULL;
             break;
         }
-        case(dense_e): {
+        case(layer_dense): {
             tensor_free(layer->activation);
             free(layer->activation);
             layer->activation = NULL;
@@ -398,7 +521,7 @@ void layer_free(layer_t *layer) {
             layer->dense = NULL;
             break;
         }
-        case(convolution_e): {
+        case(layer_convolution): {
             tensor_free(layer->activation);
             free(layer->activation);
             layer->activation = NULL;
@@ -410,7 +533,7 @@ void layer_free(layer_t *layer) {
             layer->convolution = NULL;
             break;
         }
-        case(reduce_e): {
+        case(layer_reduce): {
             tensor_free(layer->activation);
             free(layer->activation);
             layer->activation = NULL;
@@ -422,77 +545,8 @@ void layer_free(layer_t *layer) {
             layer->reduce = NULL;
             break;
         }
-        case(residual_e): {
+        case(layer_residual): {
             fprintf(stderr, "ERROR: Residual connections not yet implemented!\n");
-            exit(1);
-            break;
-        }
-    }
-}
-void layer_activate(layer_t *layer) {
-    switch(layer->activation_type) {
-        case(identity_e): {
-            break;
-        }
-        case(sigmoid_e): {
-            tensor_negate_unary(layer->activation);
-            tensor_exp_unary(layer->activation);
-            tensor_add_unary(layer->activation, 1);
-            tensor_reciprocal_unary(layer->activation);
-            break;
-        }
-        case(relu_e): {
-            tensor_max_unary(layer->activation, 0);
-            break;
-        }
-        case(silu_e): {
-            /* Not sure how to this one... */
-            fprintf(stderr, "ERROR: SiLU is not yet implemented!\n");
-            exit(1);
-            break;
-        }
-        case(gelu_e): {
-            /* Not sure how to this one either... */
-            fprintf(stderr, "ERROR: GeLU is not yet implemented!\n");
-            exit(1);
-            break;
-        }
-        case(tanh_e): {
-            fprintf(stderr, "ERROR: Tanh is not yet implemented!\n");
-            exit(1);
-            break;
-        }
-    }
-}
-void layer_activate_derivative(layer_t *layer) {
-    switch(layer->activation_type) {
-        case(identity_e): {
-            tensor_set_unary(layer->activation_grad, 1);
-            exit(1);
-            break;
-        }
-        case(sigmoid_e): {
-            fprintf(stderr, "ERROR: Sigmoid derivative is not yet implemented!\n");
-            exit(1);
-            break;
-        }
-        case(relu_e): {
-            fprintf(stderr, "ERROR: ReLU derivative is not yet implemented!\n");
-            exit(1);
-            break;
-        }
-        case(silu_e): {
-            fprintf(stderr, "ERROR: SiLU derivative is not yet implemented!\n");
-            exit(1);
-            break;
-        }
-        case(gelu_e): {
-            fprintf(stderr, "ERROR: GeLU derivative is not yet implemented!\n");
-            exit(1);
-            break;
-        }
-        case(tanh_e): {
-            fprintf(stderr, "ERROR: Tanh derivative is not yet implemented!\n");
             exit(1);
             break;
         }
@@ -500,31 +554,31 @@ void layer_activate_derivative(layer_t *layer) {
 }
 
 nn_t nn_alloc(nnconf_t *nnconf) {
-    assert(nnconf->layerconf[0].type == input_e); /* Input layer has to be an input layer. */
+    assert(nnconf->layerconf[0].type == layer_input); /* Input layer has to be an input layer. */
     nn_t nn = {
         .layers = nnconf->layers,
         .layer = calloc(nnconf->layers, sizeof(layer_t)),
     };
     for(uint64_t i = 0; i < nnconf->layers; i++) {
         switch(nnconf->layerconf[i].type) {
-            case(input_e): {
+            case(layer_input): {
                 break;
             }
-            case(dense_e): {
+            case(layer_dense): {
                 nnconf->layerconf[i].dense_previous_size = nn.layer[i - 1].activation->view->sizes[_z] * nn.layer[i - 1].activation->view->sizes[_y] * nn.layer[i - 1].activation->view->sizes[_x];
                 break;
             }
-            case(convolution_e): {
+            case(layer_convolution): {
                 nnconf->layerconf[i].convolution_channels = nn.layer[i - 1].activation->view->sizes[_z];
                 nnconf->layerconf[i].convolution_previous_size = nn.layer[i - 1].activation->view->sizes[_y]; // Assumes previous layers activation is of shape [1, a, b, b]
                 break;
             }
-            case(reduce_e): {
+            case(layer_reduce): {
                 nnconf->layerconf[i].reduce_channels = nn.layer[i - 1].activation->view->sizes[_z]; // Assumes previous layers activation is of shape [1, a, b, b]
                 nnconf->layerconf[i].reduce_previous_size = nn.layer[i - 1].activation->view->sizes[_y]; // Assumes previous layers activation is of shape [1, a, b, b]
                 break;
             }
-            case(residual_e): {
+            case(layer_residual): {
                 fprintf(stderr, "ERROR: Residual connections not yet implemented!\n");
                 exit(1);
                 break;
@@ -543,27 +597,27 @@ void nn_free(nn_t *nn) {
 void nn_init_random(nn_t *nn) {
     for(uint64_t i = 0; i < nn->layers; i++) {
         switch(nn->layer[i].type) {
-            case(input_e): {
+            case(layer_input): {
                 break;
             }
-            case(dense_e): {
+            case(layer_dense): {
                 tensor_random_unary(nn->layer[i].dense->biases);
                 tensor_random_unary(nn->layer[i].dense->weights);
                 tensor_cpu_realize(nn->layer[i].dense->biases);
                 tensor_cpu_realize(nn->layer[i].dense->weights);
                 break;
             }
-            case(convolution_e): {
+            case(layer_convolution): {
                 tensor_random_unary(nn->layer[i].convolution->biases);
                 tensor_random_unary(nn->layer[i].convolution->weights);
                 tensor_cpu_realize(nn->layer[i].convolution->biases);
                 tensor_cpu_realize(nn->layer[i].convolution->weights);
                 break;
             }
-            case(reduce_e): {
+            case(layer_reduce): {
                 break;
             }
-            case(residual_e): {
+            case(layer_residual): {
                 fprintf(stderr, "ERROR: Residual connections not yet implemented!\n");
                 exit(1);
                 break;
@@ -574,26 +628,26 @@ void nn_init_random(nn_t *nn) {
 void nn_zero_grad(nn_t *nn) {
     for(uint64_t i = 0; i < nn->layers; i++) {
         switch(nn->layer[i].type) {
-            case(input_e): {
+            case(layer_input): {
                 break;
             }
-            case(dense_e): {
+            case(layer_dense): {
                 tensor_set_unary(nn->layer[i].activation_grad, 0);
                 tensor_set_unary(nn->layer[i].dense->biases_grad, 0);
                 tensor_set_unary(nn->layer[i].dense->weights_grad, 0);
                 break;
             }
-            case(convolution_e): {
+            case(layer_convolution): {
                 tensor_set_unary(nn->layer[i].activation_grad, 0);
                 tensor_set_unary(nn->layer[i].convolution->biases_grad, 0);
                 tensor_set_unary(nn->layer[i].convolution->weights_grad, 0);
                 break;
             }
-            case(reduce_e): {
+            case(layer_reduce): {
                 tensor_set_unary(nn->layer[i].activation_grad, 0);
                 break;
             }
-            case(residual_e): {
+            case(layer_residual): {
                 fprintf(stderr, "ERROR: Residual connections not yet implemented!\n");
                 exit(1);
                 break;
@@ -601,7 +655,7 @@ void nn_zero_grad(nn_t *nn) {
         }
     }
 }
-/* Input needs to be reshaped, such that input->view->sizes[_a] == 1. Choose the sample using tensor_index_move along the a-axis. */
+/* Input needs to be resized, such that input->view->sizes[_a] == 1. Choose the sample using tensor_index_move along the a-axis. */
 void nn_evaluate(nn_t *nn, tensor_t *input) {
     // assert(nn->layer[0].activation->view->buffer->sizes[_a] == 1);
     // assert(input->view->sizes[_a] == 1);
@@ -611,26 +665,26 @@ void nn_evaluate(nn_t *nn, tensor_t *input) {
 
     for(uint64_t i = 0; i < nn->layers; i++) {
         switch(nn->layer[i].type) {
-            case(input_e): {
+            case(layer_input): {
                 tensor_copy_binary(NN_INPUT_P(nn), input);
                 break;
             }
-            case(dense_e): {
+            case(layer_dense): {
                 dense_forward(nn->layer[i - 1].activation, nn->layer[i].dense, nn->layer[i].activation);
-                layer_activate(&nn->layer[i]);
+                tensor_activate(nn->layer[i].activation, nn->layer[i].activation_type);
                 break;
             }
-            case(convolution_e): {
+            case(layer_convolution): {
                 convolution_forward(nn->layer[i - 1].activation, nn->layer[i].convolution, nn->layer[i].activation);
-                layer_activate(&nn->layer[i]);
+                tensor_activate(nn->layer[i].activation, nn->layer[i].activation_type);
                 break;
             }
-            case(reduce_e): {
+            case(layer_reduce): {
                 reduce_forward(nn->layer[i - 1].activation, nn->layer[i].reduce, nn->layer[i].activation);
-                layer_activate(&nn->layer[i]);
+                tensor_activate(nn->layer[i].activation, nn->layer[i].activation_type);
                 break;
             }
-            case(residual_e): {
+            case(layer_residual): {
                 fprintf(stderr, "ERROR: Residual connections not yet implemented!\n");
                 exit(1);
                 break;
@@ -639,4 +693,63 @@ void nn_evaluate(nn_t *nn, tensor_t *input) {
     }
     tensor_cpu_realize(NN_OUTPUT_P(nn));
 }
-void nn_backward(nn_t *nn, tensor_t *input, tensor_t *output);
+void nn_backward(nn_t *nn, tensor_t *input, tensor_t *output) {
+    nn_evaluate(nn, input);
+    tensor_copy_binary(nn->layer[nn->layers - 1].activation_grad, NN_OUTPUT_P(nn));
+    tensor_subtract_binary(nn->layer[nn->layers - 1].activation_grad, output);
+    tensor_cpu_realize(nn->layer[nn->layers - 1].activation_grad);
+
+    for(uint64_t i = nn->layers - 1; i > 0; i--) {
+        switch(nn->layer[i].type) {
+            case(layer_input): {
+                fprintf(stderr, "ERROR: Input layer not at input!\n");
+                exit(1);
+                break;
+            }
+            case(layer_dense): {
+                dense_backward(nn->layer[i - 1].activation_grad, nn->layer[i - 1].activation, nn->layer[i].dense, nn->layer[i].activation_type, nn->layer[i].activation_grad, nn->layer[i].activation);
+                break;
+            }
+            case(layer_convolution): {
+                break;
+            }
+            case(layer_reduce): {
+                break;
+            }
+            case(layer_residual): {
+                fprintf(stderr, "ERROR: Residual connections not yet implemented!\n");
+                exit(1);
+                break;
+            }
+        }
+    }
+}
+void nn_learn(nn_t *nn, double learning) {
+    for(uint64_t i = 0; i < nn->layers; i++) {
+        switch(nn->layer[i].type) {
+            case(layer_input): {
+                break;
+            }
+            case(layer_dense): {
+                tensor_multiply_unary(nn->layer[i].dense->biases_grad, learning);
+                tensor_subtract_binary(nn->layer[i].dense->biases, nn->layer[i].dense->biases_grad);
+                tensor_multiply_unary(nn->layer[i].dense->weights_grad, learning);
+                tensor_subtract_binary(nn->layer[i].dense->weights, nn->layer[i].dense->weights_grad);
+                break;
+            }
+            case(layer_convolution): {
+                break;
+            }
+            case(layer_reduce): {
+                break;
+            }
+            case(layer_residual): {
+                fprintf(stderr, "ERROR: Residual connections not yet implemented!\n");
+                exit(1);
+                break;
+            }
+        }
+    }
+}
+void nn_step(nn_t *nn, tensor_t *input, tensor_t *output, double learning) {
+}

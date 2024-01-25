@@ -43,9 +43,10 @@ void buffer_print(buffer_t *buffer, uint64_t padding, uint64_t offset, const cha
         for(uint64_t z = 0; z < buffer->sizes[_z]; z++) {
             printf("%*s[\n", (int) (offset + 2 * padding), "");
             for(uint64_t y = 0; y < buffer->sizes[_y]; y++) {
-                printf("%*s[", (int) (offset + 3 * padding), "");
+                printf("%*s[ ", (int) (offset + 3 * padding), "");
                 for(uint64_t x = 0; x < buffer->sizes[_x]; x++) {
                     printf("%+lf ", BUFFER_AT_P(buffer, a, z, y, x));
+                    // printf("% lf ", BUFFER_AT_P(buffer, a, z, y, x));
                 }
                 printf("]\n");
             }
@@ -59,29 +60,30 @@ void buffer_preview(buffer_t *buffer, uint64_t padding, uint64_t offset, const c
     printf("%*s%s [%lu, %lu, %lu, %lu] preview:\n", (int) (offset), "", name, buffer->sizes[_a], buffer->sizes[_z], buffer->sizes[_y], buffer->sizes[_x]);
     printf("%*s[\n", (int) (offset), "");
     for(uint64_t a = 0; a < buffer->sizes[_a]; a++) {
-        if(a >= 3) {
+        if(a >= 2) {
             printf("%*s...\n", (int) (offset + padding), "");
             break;
         }
         printf("%*s[\n", (int) (offset + padding), "");
         for(uint64_t z = 0; z < buffer->sizes[_z]; z++) {
-            if(z >= 3) {
+            if(z >= 2) {
                 printf("%*s...\n", (int) (offset + 2 * padding), "");
                 break;
             }
             printf("%*s[\n", (int) (offset + 2 * padding), "");
             for(uint64_t y = 0; y < buffer->sizes[_y]; y++) {
-                if(y >= 3) {
+                if(y >= 4) {
                     printf("%*s...\n", (int) (offset + 3 * padding), "");
                     break;
                 }
-                printf("%*s[", (int) (offset + 3 * padding), "");
+                printf("%*s[ ", (int) (offset + 3 * padding), "");
                 for(uint64_t x = 0; x < buffer->sizes[_x]; x++) {
-                    if(x >= 3) {
+                    if(x >= 4) {
                         printf("...");
                         break;
                     }
                     printf("%+lf ", BUFFER_AT_P(buffer, a, z, y, x));
+                    // printf("% lf ", BUFFER_AT_P(buffer, a, z, y, x));
                 }
                 printf("]\n");
             }
@@ -118,7 +120,7 @@ void view_configure(view_t *view, buffer_t *buffer, uint64_t a_start, uint64_t z
     view->strides[_y] = buffer->strides[_y];
     view->strides[_x] = buffer->strides[_x];
 }
-void view_reshape(view_t *view, uint64_t a_size, uint64_t z_size, uint64_t y_size, uint64_t x_size) {
+void view_resize(view_t *view, uint64_t a_size, uint64_t z_size, uint64_t y_size, uint64_t x_size) {
     view->sizes[_a] = a_size;
     view->sizes[_z] = z_size;
     view->sizes[_y] = y_size;
@@ -137,9 +139,11 @@ void view_print(view_t *view, uint64_t padding, uint64_t offset, const char *nam
         for(uint64_t z = 0; z < view->sizes[_z]; z++) {
             printf("%*s[\n", (int) (offset + 2 * padding), "");
             for(uint64_t y = 0; y < view->sizes[_y]; y++) {
-                printf("%*s[", (int) (offset + 3 * padding), "");
+                printf("%*s[ ", (int) (offset + 3 * padding), "");
                 for(uint64_t x = 0; x < view->sizes[_x]; x++) {
+                    // printf("{%lu} %+lf ", view->strides[_a] * a + view->strides[_z] * z + view->strides[_y] * y + view->strides[_x] * x + view->offset, VIEW_AT_P(view, a, z, y, x));
                     printf("%+lf ", VIEW_AT_P(view, a, z, y, x));
+                    // printf("% lf ", VIEW_AT_P(view, a, z, y, x));
                 }
                 printf("]\n");
             }
@@ -153,29 +157,30 @@ void view_preview(view_t *view, uint64_t padding, uint64_t offset, const char *n
     printf("%*s%s buffer shape [%lu, %lu, %lu, %lu] view_shape [%lu, %lu, %lu, %lu] offset %lu preview:\n", (int) (offset), "", name, view->buffer->sizes[_a], view->buffer->sizes[_z], view->buffer->sizes[_y], view->buffer->sizes[_x], view->sizes[_a], view->sizes[_z], view->sizes[_y], view->sizes[_x], view->offset);
     printf("%*s[\n", (int) (offset), "");
     for(uint64_t a = 0; a < view->sizes[_a]; a++) {
-        if(a >= 3) {
-            printf("%*s...\n", (int) (offset + padding), "");
+        if(a >= 2) {
+            printf("%*s...", (int) (padding), "");
             break;
         }
         printf("%*s[\n", (int) (offset + padding), "");
         for(uint64_t z = 0; z < view->sizes[_z]; z++) {
-            if(z >= 3) {
-                printf("%*s...\n", (int) (offset + 2 * padding), "");
+            if(z >= 2) {
+                printf("%*s...\n", (int) (offset + padding), "");
                 break;
             }
             printf("%*s[\n", (int) (offset + 2 * padding), "");
             for(uint64_t y = 0; y < view->sizes[_y]; y++) {
-                if(y >= 3) {
-                    printf("%*s...\n", (int) (offset + 3 * padding), "");
+                if(y >= 4) {
+                    printf("%*s...\n", (int) (offset + 2 * padding), "");
                     break;
                 }
-                printf("%*s[", (int) (offset + 3 * padding), "");
+                printf("%*s[ ", (int) (offset + 3 * padding), "");
                 for(uint64_t x = 0; x < view->sizes[_x]; x++) {
-                    if(x >= 3) {
+                    if(x >= 4) {
                         printf("...");
                         break;
                     }
                     printf("%+lf ", VIEW_AT_P(view, a, z, y, x));
+                    // printf("% lf ", VIEW_AT_P(view, a, z, y, x));
                 }
                 printf("]\n");
             }
@@ -251,6 +256,14 @@ void operation_print(operation_t *operation) {
                     printf("U tnh %lu, %lu, %lu, %lu]\n", operation->unary_out->sizes[_a], operation->unary_out->sizes[_z], operation->unary_out->sizes[_y], operation->unary_out->sizes[_x]);
                     break;
                 }
+                case(unary_sign): {
+                    printf("U sgn %lu, %lu, %lu, %lu]\n", operation->unary_out->sizes[_a], operation->unary_out->sizes[_z], operation->unary_out->sizes[_y], operation->unary_out->sizes[_x]);
+                    break;
+                }
+                case(unary_square): {
+                    printf("U sqr %lu, %lu, %lu, %lu]\n", operation->unary_out->sizes[_a], operation->unary_out->sizes[_z], operation->unary_out->sizes[_y], operation->unary_out->sizes[_x]);
+                    break;
+                }
             }
             break;
         }
@@ -289,12 +302,16 @@ void operation_print(operation_t *operation) {
         }
         case(operation_move): {
             switch(operation->move_type) {
-                case(move_reshape): {
-                    printf("M rsp [%lu, %lu, %lu, %lu] to [%lu, %lu, %lu, %lu]\n", operation->move_out->sizes[_a], operation->move_out->sizes[_z], operation->move_out->sizes[_y], operation->move_out->sizes[_x], operation->move_var[_a], operation->move_var[_z], operation->move_var[_y], operation->move_var[_x]);
+                case(move_resize): {
+                    printf("M rsz [%lu, %lu, %lu, %lu] to [%lu, %lu, %lu, %lu]\n", operation->move_out->sizes[_a], operation->move_out->sizes[_z], operation->move_out->sizes[_y], operation->move_out->sizes[_x], operation->move_var[_a], operation->move_var[_z], operation->move_var[_y], operation->move_var[_x]);
                     break;
                 }
                 case(move_index): {
                     printf("M idx [%lu, %lu, %lu, %lu] at [%lu, %lu, %lu, %lu]\n", operation->move_out->sizes[_a], operation->move_out->sizes[_z], operation->move_out->sizes[_y], operation->move_out->sizes[_x], operation->move_var[_a], operation->move_var[_z], operation->move_var[_y], operation->move_var[_x]);
+                    break;
+                }
+                case(move_reshape): {
+                    printf("M rsp [%lu, %lu, %lu, %lu] at [%lu, %lu, %lu, %lu]\n", operation->move_out->sizes[_a], operation->move_out->sizes[_z], operation->move_out->sizes[_y], operation->move_out->sizes[_x], operation->move_var[_a], operation->move_var[_z], operation->move_var[_y], operation->move_var[_x]);
                     break;
                 }
                 case(move_permute): {
@@ -549,15 +566,48 @@ void operation_cpu_realize_unary(operation_t *operation) {
             }
             break;
         }
+        case(unary_sign): {
+            for(uint64_t a = 0; a < operation->unary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->unary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->unary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->unary_out->sizes[_x]; x++) {
+                            // if(VIEW_AT_P(operation->unary_out, a, z, y, x) > 0) {
+                            //     VIEW_AT_P(operation->unary_out, a, z, y, x) = 1;
+                            // } else if(VIEW_AT_P(operation->unary_out, a, z, y, x) < 0) {
+                            //     VIEW_AT_P(operation->unary_out, a, z, y, x) = -1;
+                            // } else {
+                            //     VIEW_AT_P(operation->unary_out, a, z, y, x) = 0;
+                            // }
+                            /* Faster but doesn't cover all cases. */
+                            /* Also check whether it is >= or >. Kinda feel like it should be >. */
+                            VIEW_AT_P(operation->unary_out, a, z, y, x) = VIEW_AT_P(operation->unary_out, a, z, y, x) >= 0;
+                        }
+                    }
+                }
+            }
+            break;
+        }
+        case(unary_square): {
+            for(uint64_t a = 0; a < operation->unary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->unary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->unary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->unary_out->sizes[_x]; x++) {
+                            VIEW_AT_P(operation->unary_out, a, z, y, x) *= VIEW_AT_P(operation->unary_out, a, z, y, x);
+                        }
+                    }
+                }
+            }
+            break;
+        }
     }
 }
 inline void operation_cpu_realize_binary(operation_t *operation) {
     switch(operation->binary_type) {
         case(binary_add): {
-            for(uint64_t a = 0; a < operation->binary_in->sizes[_a]; a++) {
-                for(uint64_t z = 0; z < operation->binary_in->sizes[_z]; z++) {
-                    for(uint64_t y = 0; y < operation->binary_in->sizes[_y]; y++) {
-                        for(uint64_t x = 0; x < operation->binary_in->sizes[_x]; x++) {
+            for(uint64_t a = 0; a < operation->binary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->binary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->binary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->binary_out->sizes[_x]; x++) {
                             VIEW_AT_P(operation->binary_out, a, z, y, x) += VIEW_AT_P(operation->binary_in, a, z, y, x);
                         }
                     }
@@ -566,10 +616,10 @@ inline void operation_cpu_realize_binary(operation_t *operation) {
             break;
         }
         case(binary_multiply): {
-            for(uint64_t a = 0; a < operation->binary_in->sizes[_a]; a++) {
-                for(uint64_t z = 0; z < operation->binary_in->sizes[_z]; z++) {
-                    for(uint64_t y = 0; y < operation->binary_in->sizes[_y]; y++) {
-                        for(uint64_t x = 0; x < operation->binary_in->sizes[_x]; x++) {
+            for(uint64_t a = 0; a < operation->binary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->binary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->binary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->binary_out->sizes[_x]; x++) {
                             VIEW_AT_P(operation->binary_out, a, z, y, x) *= VIEW_AT_P(operation->binary_in, a, z, y, x);
                         }
                     }
@@ -578,10 +628,10 @@ inline void operation_cpu_realize_binary(operation_t *operation) {
             break;
         }
         case(binary_subtract): {
-            for(uint64_t a = 0; a < operation->binary_in->sizes[_a]; a++) {
-                for(uint64_t z = 0; z < operation->binary_in->sizes[_z]; z++) {
-                    for(uint64_t y = 0; y < operation->binary_in->sizes[_y]; y++) {
-                        for(uint64_t x = 0; x < operation->binary_in->sizes[_x]; x++) {
+            for(uint64_t a = 0; a < operation->binary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->binary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->binary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->binary_out->sizes[_x]; x++) {
                             VIEW_AT_P(operation->binary_out, a, z, y, x) -= VIEW_AT_P(operation->binary_in, a, z, y, x);
                         }
                     }
@@ -590,10 +640,10 @@ inline void operation_cpu_realize_binary(operation_t *operation) {
             break;
         }
         case(binary_divide): {
-            for(uint64_t a = 0; a < operation->binary_in->sizes[_a]; a++) {
-                for(uint64_t z = 0; z < operation->binary_in->sizes[_z]; z++) {
-                    for(uint64_t y = 0; y < operation->binary_in->sizes[_y]; y++) {
-                        for(uint64_t x = 0; x < operation->binary_in->sizes[_x]; x++) {
+            for(uint64_t a = 0; a < operation->binary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->binary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->binary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->binary_out->sizes[_x]; x++) {
                             VIEW_AT_P(operation->binary_out, a, z, y, x) /= VIEW_AT_P(operation->binary_in, a, z, y, x);
                         }
                     }
@@ -602,22 +652,23 @@ inline void operation_cpu_realize_binary(operation_t *operation) {
             break;
         }
         case(binary_copy): {
-            for(uint64_t a = 0; a < operation->binary_in->sizes[_a]; a++) {
-                for(uint64_t z = 0; z < operation->binary_in->sizes[_z]; z++) {
-                    for(uint64_t y = 0; y < operation->binary_in->sizes[_y]; y++) {
-                        for(uint64_t x = 0; x < operation->binary_in->sizes[_x]; x++) {
+            for(uint64_t a = 0; a < operation->binary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->binary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->binary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->binary_out->sizes[_x]; x++) {
                             VIEW_AT_P(operation->binary_out, a, z, y, x) = VIEW_AT_P(operation->binary_in, a, z, y, x);
                         }
                     }
                 }
             }
+            // memcpy(operation->binary_out->buffer->values, operation->binary_in->buffer->values, sizeof(double) * operation->binary_in->sizes[_a] * operation->binary_in->sizes[_z] * operation->binary_in->sizes[_y] * operation->binary_in->sizes[_x]);
             break;
         }
         case(binary_max): {
-            for(uint64_t a = 0; a < operation->binary_in->sizes[_a]; a++) {
-                for(uint64_t z = 0; z < operation->binary_in->sizes[_z]; z++) {
-                    for(uint64_t y = 0; y < operation->binary_in->sizes[_y]; y++) {
-                        for(uint64_t x = 0; x < operation->binary_in->sizes[_x]; x++) {
+            for(uint64_t a = 0; a < operation->binary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->binary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->binary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->binary_out->sizes[_x]; x++) {
                             if(VIEW_AT_P(operation->binary_out, a, z, y, x) < VIEW_AT_P(operation->binary_in, a, z, y, x)) {
                                 VIEW_AT_P(operation->binary_out, a, z, y, x) = VIEW_AT_P(operation->binary_in, a, z, y, x);
                             }
@@ -628,10 +679,10 @@ inline void operation_cpu_realize_binary(operation_t *operation) {
             break;
         }
         case(binary_min): {
-            for(uint64_t a = 0; a < operation->binary_in->sizes[_a]; a++) {
-                for(uint64_t z = 0; z < operation->binary_in->sizes[_z]; z++) {
-                    for(uint64_t y = 0; y < operation->binary_in->sizes[_y]; y++) {
-                        for(uint64_t x = 0; x < operation->binary_in->sizes[_x]; x++) {
+            for(uint64_t a = 0; a < operation->binary_out->sizes[_a]; a++) {
+                for(uint64_t z = 0; z < operation->binary_out->sizes[_z]; z++) {
+                    for(uint64_t y = 0; y < operation->binary_out->sizes[_y]; y++) {
+                        for(uint64_t x = 0; x < operation->binary_out->sizes[_x]; x++) {
                             if(VIEW_AT_P(operation->binary_out, a, z, y, x) > VIEW_AT_P(operation->binary_in, a, z, y, x)) {
                                 VIEW_AT_P(operation->binary_out, a, z, y, x) = VIEW_AT_P(operation->binary_in, a, z, y, x);
                             }
@@ -645,7 +696,7 @@ inline void operation_cpu_realize_binary(operation_t *operation) {
 }
 void operation_cpu_realize_move(operation_t *operation) {
     switch(operation->move_type) {
-        case(move_reshape): {
+        case(move_resize): {
             operation->move_out->sizes[_a] = operation->move_var[_a];
             operation->move_out->sizes[_z] = operation->move_var[_z];
             operation->move_out->sizes[_y] = operation->move_var[_y];
@@ -654,6 +705,20 @@ void operation_cpu_realize_move(operation_t *operation) {
         }
         case(move_index): {
             operation->move_out->offset = operation->move_out->strides[_a] * operation->move_var[_a] + operation->move_out->strides[_z] * operation->move_var[_z] + operation->move_out->strides[_y] * operation->move_var[_y] + operation->move_out->strides[_x] * operation->move_var[_x];
+            break;
+        }
+        case(move_reshape): {
+            assert(operation->move_out->sizes[_a] * operation->move_out->sizes[_z] * operation->move_out->sizes[_y] * operation->move_out->sizes[_x]
+                   ==
+                   operation->move_var[_a] * operation->move_out->sizes[_z] * operation->move_out->sizes[_y] * operation->move_out->sizes[_x]);
+            operation->move_out->sizes[_a] = operation->move_var[_a];
+            operation->move_out->sizes[_z] = operation->move_var[_z];
+            operation->move_out->sizes[_y] = operation->move_var[_y];
+            operation->move_out->sizes[_x] = operation->move_var[_x];
+            operation->move_out->strides[_a] = operation->move_out->sizes[_z] * operation->move_out->sizes[_y] * operation->move_out->sizes[_x];
+            operation->move_out->strides[_z] = operation->move_out->sizes[_y] * operation->move_out->sizes[_x];
+            operation->move_out->strides[_y] = operation->move_out->sizes[_x];
+            operation->move_out->strides[_x] = 1;
             break;
         }
         case(move_permute): {
@@ -862,7 +927,7 @@ void lazyop_reduce_config(lazyop_t *lazyop, lazyop_t *out_parent, lazyop_t *in_p
     if(out_parent) {
         /* Why was this commented out? */
         /* Something about reduce operation not being able to be the base of the thing, but that doesn't make sense */
-        /* Man this is weird... It doesn't seem to change anything... But I don't get that at all tbh */
+        /* Man this is weird... It doesn't seem to change anything... But I don't get that at all tbh... WTF */
         if(out_parent->base) {
             lazyop->base = out_parent->base;
             out_parent->base = NULL;
@@ -1052,6 +1117,24 @@ void tensor_tanh_unary(tensor_t *tensor) {
     }
     lazyop_unary_config(tensor->lazyop, parent, unary_tanh, tensor->view, 0);
 }
+void tensor_sign_unary(tensor_t *tensor) {
+    lazyop_t *parent = tensor->lazyop;
+    tensor->lazyop = calloc(1, sizeof(lazyop_t));
+    *tensor->lazyop = lazyop_alloc();
+    if(!parent) {
+        tensor->lazyop->base = tensor;
+    }
+    lazyop_unary_config(tensor->lazyop, parent, unary_sign, tensor->view, 0);
+}
+void tensor_square_unary(tensor_t *tensor) {
+    lazyop_t *parent = tensor->lazyop;
+    tensor->lazyop = calloc(1, sizeof(lazyop_t));
+    *tensor->lazyop = lazyop_alloc();
+    if(!parent) {
+        tensor->lazyop->base = tensor;
+    }
+    lazyop_unary_config(tensor->lazyop, parent, unary_square, tensor->view, 0);
+}
 
 void tensor_add_binary(tensor_t *out, tensor_t *in) {
     lazyop_t *parent = out->lazyop;
@@ -1107,6 +1190,7 @@ void tensor_min_binary(tensor_t *out, tensor_t *in) {
     }
     lazyop_binary_config(out->lazyop, parent, in->lazyop, binary_min, out->view, in->view);
 }
+/* Wanted to do memcpy here but I don't think it works. */
 void tensor_copy_binary(tensor_t *out, tensor_t *in) {
     lazyop_t *parent = out->lazyop;
     out->lazyop = calloc(1, sizeof(lazyop_t));
@@ -1117,15 +1201,15 @@ void tensor_copy_binary(tensor_t *out, tensor_t *in) {
     lazyop_binary_config(out->lazyop, parent, in->lazyop, binary_copy, out->view, in->view);
 }
 
-/* Reshapes the view. All the uint arguments are the sizes. */
-void tensor_reshape_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uint64_t x) {
+/* Resizes the view. All the uint arguments are the sizes. */
+void tensor_resize_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uint64_t x) {
     lazyop_t *parent = tensor->lazyop;
     tensor->lazyop = calloc(1, sizeof(lazyop_t));
     *tensor->lazyop = lazyop_alloc();
     if(!parent) {
         tensor->lazyop->base = tensor;
     }
-    lazyop_move_config(tensor->lazyop, parent, NULL, move_reshape, tensor->view, NULL, a, z, y, x);
+    lazyop_move_config(tensor->lazyop, parent, NULL, move_resize, tensor->view, NULL, a, z, y, x);
 }
 /* Moves the view. All the uint arguments are the indices to move the upper left corner to. */
 void tensor_index_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uint64_t x) {
@@ -1136,6 +1220,15 @@ void tensor_index_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uin
         tensor->lazyop->base = tensor;
     }
     lazyop_move_config(tensor->lazyop, parent, NULL, move_index, tensor->view, NULL, a, z, y, x);
+}
+void tensor_reshape_move(tensor_t *tensor, uint64_t a, uint64_t z, uint64_t y, uint64_t x) {
+    lazyop_t *parent = tensor->lazyop;
+    tensor->lazyop = calloc(1, sizeof(lazyop_t));
+    *tensor->lazyop = lazyop_alloc();
+    if(!parent) {
+        tensor->lazyop->base = tensor;
+    }
+    lazyop_move_config(tensor->lazyop, parent, NULL, move_reshape, tensor->view, NULL, a, z, y, x);
 }
 void tensor_permute_move(tensor_t *out, tensor_t *in) {
 }
@@ -1195,4 +1288,5 @@ void tensor_print(tensor_t *tensor, uint64_t padding, uint64_t offset, const cha
     tensor_cpu_realize(tensor);
     // lazyop_print(tensor->lazyop, padding, offset, name);
     view_preview(tensor->view, padding, offset, name);
+    // view_print(tensor->view, padding, offset, name);
 }
