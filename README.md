@@ -4,7 +4,7 @@ A neural chess engine using a custom neural net framework written in C and OpenC
 
 ## Progress / TODOs
 
-1. Finish cgrad
+1. Finish cgrad (On hold until this one is done)
 2. Make chess bindings for the NNs
 3. Implement self play
 4. Train some (hopefully) strong agents
