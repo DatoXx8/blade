@@ -1,6 +1,6 @@
 # Blade
 
-A neural chess engine using a custom neural net framework written in C and OpenCL
+A neural chess engine written in Zig using my ML framework [grads](https://github.com/DatoXx8/grads). It is a recreational project.
 
 ## Progress / TODOs
 
