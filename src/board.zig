@@ -224,20 +224,22 @@ pub const Board = struct {
     }
     pub fn make_move(this: *@This(), move: Move) void {
         assert(this.fifty_move < 100);
-        if (move.castle == .none) {
-            assert(this.squares[move.to] == move.captured);
-            if (move.en_passant) {
-                assert(false);
+        assert(this.squares[move.to] == move.captured);
+        if (move.en_passant_capture) {
+            this.squares[move.to] = this.squares[move.from];
+            this.squares[move.from] = .empty;
+            if (this.side_to_move == .white) {
+                this.squares[move.to - 8] = .empty;
             } else {
-                if (move.promoted == .empty) {
-                    this.squares[move.to] = this.squares[move.from];
-                } else {
-                    this.squares[move.to] = move.promoted;
-                }
-                this.squares[move.from] = .empty;
+                this.squares[move.to + 8] = .empty;
             }
         } else {
-            assert(false);
+            if (move.promoted == .empty) {
+                this.squares[move.to] = this.squares[move.from];
+            } else {
+                this.squares[move.to] = move.promoted;
+            }
+            this.squares[move.from] = .empty;
         }
         this.side_to_move = switch (this.side_to_move) {
             .white => .black,
@@ -245,42 +247,58 @@ pub const Board = struct {
         };
         // This is 0 in case en passant is not possible
         this.en_passant = move.en_passant_square;
-        this.castle = move.castle_perm;
+        // this.castle = move.castle_perm;
+        this.fifty_move += 1;
     }
     pub fn undo_move(this: *@This(), move: Move) void {
-        if (move.castle == .none) {
-            assert(this.squares[move.from] == .empty);
-            if (move.en_passant) {
-                assert(false);
+        assert(this.squares[move.from] == .empty);
+        if (move.en_passant_capture) {
+            if (this.side_to_move == .black) {
+                this.squares[move.from] = .white_pawn;
+                this.squares[move.to] = .empty;
+                this.squares[move.to - 8] = .black_pawn;
             } else {
-                if (move.promoted == .empty) {
-                    this.squares[move.from] = this.squares[move.to];
-                } else {
-                    this.squares[move.from] = switch (this.side_to_move) {
-                        .white => .black_pawn,
-                        .black => .white_pawn,
-                    };
-                }
-                this.squares[move.to] = move.captured;
+                this.squares[move.from] = .black_pawn;
+                this.squares[move.to] = .empty;
+                this.squares[move.to + 8] = .white_pawn;
             }
         } else {
-            assert(false);
+            if (move.promoted == .empty) {
+                this.squares[move.from] = this.squares[move.to];
+            } else {
+                this.squares[move.from] = switch (this.side_to_move) {
+                    .white => .black_pawn,
+                    .black => .white_pawn,
+                };
+            }
+            this.squares[move.to] = move.captured;
         }
         this.side_to_move = switch (this.side_to_move) {
             .white => .black,
             .black => .white,
         };
         this.en_passant = move.en_passant_square_past;
-        this.castle = move.castle_perm_past;
+        // this.castle = move.castle_perm_past;
+        this.fifty_move -= 1;
     }
-    pub fn print(this: *const @This(), writer: anytype) !void {
+    pub fn copy_to(this: *const @This(), target: *Board) void {
+        target.castle = this.castle;
+        target.en_passant = this.en_passant;
+        target.side_to_move = this.side_to_move;
+        target.fifty_move = this.fifty_move;
+        for (0..square_count) |square_idx| {
+            target.squares[square_idx] = this.squares[square_idx];
+        }
+    }
+    pub fn print(this: *const @This()) void {
         // Print this way to have a1 be the bottom left square with index 0
-        try writer.print("   a b c d e f g h\n", .{});
+        const std = @import("std");
+        std.debug.print("   a b c d e f g h\n", .{});
         for (0..8) |row_idx| {
-            try writer.print("{} ", .{8 - row_idx});
+            std.debug.print("{} ", .{8 - row_idx});
             for (0..8) |column_idx| {
                 const square_idx: usize = (8 - (row_idx + 1)) * 8 + column_idx;
-                try writer.print(" {s}", .{
+                std.debug.print(" {s}", .{
                     switch (this.squares[square_idx]) {
                         .empty => ".",
                         .white_pawn => "P",
@@ -298,22 +316,23 @@ pub const Board = struct {
                     },
                 });
             }
-            try writer.print("\n", .{});
+            std.debug.print("\n", .{});
         }
-        try writer.print("To move: {s}\n", .{
+        std.debug.print("To move: {s}\n", .{
             switch (this.side_to_move) {
                 .white => "w",
                 .black => "b",
             },
         });
     }
-    pub fn debug(this: *const @This(), writer: anytype) !void {
-        try writer.print("      a      b      c      d      e      f      g      h\n", .{});
+    pub fn debug(this: *const @This()) void {
+        const std = @import("std");
+        std.debug.print("      a      b      c      d      e      f      g      h\n", .{});
         for (0..8) |row_idx| {
-            try writer.print("{} ", .{8 - row_idx});
+            std.debug.print("{} ", .{8 - row_idx});
             for (0..8) |column_idx| {
                 const square_idx: usize = (8 - (row_idx + 1)) * 8 + column_idx;
-                try writer.print("({d:2} {s}) ", .{ square_idx, switch (this.squares[square_idx]) {
+                std.debug.print("({d:2} {s}) ", .{ square_idx, switch (this.squares[square_idx]) {
                     .empty => ".",
                     .white_pawn => "P",
                     .black_pawn => "p",
@@ -329,28 +348,28 @@ pub const Board = struct {
                     .black_king => "k",
                 } });
             }
-            try writer.print("\n", .{});
+            std.debug.print("\n", .{});
         }
-        try writer.print("To move: {s}\n", .{
+        std.debug.print("To move: {s}\n", .{
             switch (this.side_to_move) {
                 .white => "w",
                 .black => "b",
             },
         });
         if (this.en_passant != 0) {
-            try writer.print("En passant: {c}{c} = {}\n", .{
+            std.debug.print("En passant: {c}{c} = {}\n", .{
                 'a' + (this.en_passant % 8),
                 '1' + @divFloor(this.en_passant, 8),
                 this.en_passant,
             });
         } else {
-            try writer.print("En passant: ---\n", .{});
+            std.debug.print("En passant: ---\n", .{});
         }
-        try writer.print("Fifty move: {}\n", .{this.fifty_move});
+        std.debug.print("Fifty move: {}\n", .{this.fifty_move});
         if (this.castle == 0) {
-            try writer.print("Castle rights: ---\n", .{});
+            std.debug.print("Castle rights: ---\n", .{});
         } else {
-            try writer.print("Castle rights: {s}{s}{s}{s}\n", .{
+            std.debug.print("Castle rights: {s}{s}{s}{s}\n", .{
                 // There has to be a significantly nicer way of doing this
                 switch (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.white_kingside))) == 1) {
                     true => "K",
