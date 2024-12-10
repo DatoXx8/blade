@@ -77,22 +77,17 @@ fn simulate_moves(starting: *Board, board: *Board, comptime move_num: u32, rng: 
         const move_idx: u32 = Pcg.rand_below(movelist.move_count);
         movelist_saved[movelist_idx] = movelist.move[move_idx];
         board.make_move(movelist.move[move_idx]);
-        std.debug.print("do\n", .{});
-        board.print();
     }
     for (0..move_num) |movelist_idx| {
         board.undo_move(movelist_saved[move_num - (movelist_idx + 1)]);
-        std.debug.print("undo\n", .{});
-        board.print();
     }
-    std.debug.print("\n\n\n\n", .{});
     assert(starting.castle == board.castle);
     assert(starting.en_passant == board.en_passant);
     assert(starting.side_to_move == board.side_to_move);
     assert(starting.fifty_move == board.fifty_move);
-    // for (0..square_count) |square_idx| {
-    //     assert(starting.squares[square_idx] == board.squares[square_idx]);
-    // }
+    for (0..square_count) |square_idx| {
+        assert(starting.squares[square_idx] == board.squares[square_idx]);
+    }
 }
 
 // TODO: Move tests to seperate directory
@@ -132,7 +127,7 @@ pub fn main() !void {
         false => rng_saved.?,
     };
 
-    const move_num: u32 = 8;
+    const move_num: u32 = 20;
     comptime {
         assert(move_num > 0);
     }
