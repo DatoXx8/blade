@@ -892,7 +892,7 @@ pub const Movelist = struct {
                             }
                         }
                     },
-                    else => assert(false),
+                    else => unreachable,
                 }
             }
         } else {
@@ -1760,7 +1760,7 @@ pub const Movelist = struct {
                             }
                         }
                     },
-                    else => assert(false),
+                    else => unreachable,
                 }
             }
         }
@@ -1800,10 +1800,11 @@ pub const Movelist = struct {
         }
         this.move_count = 0;
     }
-    pub fn print(this: *@This(), writer: anytype) !void {
-        try writer.print("Move count {} of {}\n", .{ this.move_count, move_count_max });
+    pub fn print(this: *@This()) void {
+        const std = @import("std");
+        std.debug.print("Move count {} of {}\n", .{ this.move_count, move_count_max });
         for (0..this.move_count) |move_idx| {
-            try writer.print("[{d:3}] => ({d:2} to {d:2}, en_passant ({}, sq {d:2}, past {d:2}), {}, {})\n", .{
+            std.debug.print("[{d:3}] => ({d:2} to {d:2}, en_passant ({}, sq {d:2}, past {d:2}), {}, {})\n", .{
                 move_idx,
                 this.move[move_idx].from,
                 this.move[move_idx].to,
