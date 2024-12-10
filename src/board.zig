@@ -34,6 +34,7 @@ pub const Piece = enum(u4) {
     }
 };
 
+/// TODO: This
 /// Accessed through (castle << @intFromEnum(...))
 pub const Castle = enum(u4) {
     none,
@@ -222,7 +223,6 @@ pub const Board = struct {
         }
     }
     pub fn make_move(this: *@This(), move: Move) void {
-        // TODO: Remove castling rights as necessary
         assert(this.fifty_move < 100);
         if (move.castle == .none) {
             assert(this.squares[move.to] == move.captured);
@@ -245,6 +245,7 @@ pub const Board = struct {
         };
         // This is 0 in case en passant is not possible
         this.en_passant = move.en_passant_square;
+        this.castle = move.castle_perm;
     }
     pub fn undo_move(this: *@This(), move: Move) void {
         if (move.castle == .none) {
@@ -269,6 +270,8 @@ pub const Board = struct {
             .white => .black,
             .black => .white,
         };
+        this.en_passant = move.en_passant_square_past;
+        this.castle = move.castle_perm_past;
     }
     pub fn print(this: *const @This(), writer: anytype) !void {
         // Print this way to have a1 be the bottom left square with index 0
