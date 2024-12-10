@@ -16,17 +16,21 @@ pub const Move = struct {
     en_passant_square: u8,
     captured: Piece,
     promoted: Piece,
-    castle: Castle,
+    // TODO: Figure out if there is a way to remove these
+    en_passant_square_past: u8,
 };
 
 pub const move_count_max: u8 = 219;
 pub const Movelist = struct {
     move_count: u8,
     move: [move_count_max]Move,
+
     pub fn generate(this: *@This(), board: *const Board) void {
         assert(this.move_count == 0);
         if (board.side_to_move == .white) {
-            for (0..square_count) |square_idx| {
+            for (0..square_count) |square_idx_size| {
+                // TODO: Refactor this usize and u8 bs
+                const square_idx: u8 = @truncate(square_idx_size);
                 if (board.squares[square_idx].is_black() or board.squares[square_idx] == .empty) {
                     continue;
                 }
@@ -35,374 +39,402 @@ pub const Movelist = struct {
                         if (Rank.of(square_idx) == .r7) {
                             if (board.squares[square_idx + 8] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .white_queen,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .white_rook,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .white_bishop,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .white_knight,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx + 7].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7],
+                                    .captured = board.squares[square_idx + 7],
                                     .promoted = .white_queen,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7],
+                                    .captured = board.squares[square_idx + 7],
                                     .promoted = .white_rook,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7],
+                                    .captured = board.squares[square_idx + 7],
                                     .promoted = .white_bishop,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7],
+                                    .captured = board.squares[square_idx + 7],
                                     .promoted = .white_knight,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx + 9].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9],
+                                    .captured = board.squares[square_idx + 9],
                                     .promoted = .white_queen,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9],
+                                    .captured = board.squares[square_idx + 9],
                                     .promoted = .white_rook,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9],
+                                    .captured = board.squares[square_idx + 9],
                                     .promoted = .white_bishop,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9],
+                                    .captured = board.squares[square_idx + 9],
                                     .promoted = .white_knight,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         } else {
                             if (board.squares[square_idx + 8] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 if (Rank.of(square_idx) == .r2 and board.squares[square_idx + 16] == .empty) {
                                     this.add(.{
-                                        .castle = .none,
                                         .to = square_idx + 16,
                                         .from = square_idx,
                                         .captured = .empty,
                                         .promoted = .empty,
                                         .en_passant_capture = false,
                                         .en_passant_square = square_idx + 8,
+                                        .en_passant_square_past = board.en_passant,
                                     });
                                 }
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx + 7].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7],
+                                    .captured = board.squares[square_idx + 7],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
-                            // Could explicitly check that the pawn is on the 4th rank but that is unnecessary
+                            // Could explicitly check that the pawn is on the 5th rank but that is unnecessary
                             if (File.of(square_idx) != .fa and square_idx + 7 == board.en_passant) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7],
+                                    .captured = board.squares[square_idx + 7],
                                     .promoted = .empty,
                                     .en_passant_capture = true,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx + 9].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9],
+                                    .captured = board.squares[square_idx + 9],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
-                            // Could explicitly check that the pawn is on the 4th rank but that is unnecessary
+                            // Could explicitly check that the pawn is on the 5th rank but that is unnecessary
                             if (File.of(square_idx) != .fh and square_idx + 9 == board.en_passant) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9],
+                                    .captured = board.squares[square_idx + 9],
                                     .promoted = .empty,
                                     .en_passant_capture = true,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
                     },
                     .white_knight => {
                         if (File.of(square_idx) != .fa) {
-                            if (Rank.of(square_idx) > .r2 and !board.squares[square_idx - 17].is_white()) {
+                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 17,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 17],
+                                    .captured = board.squares[square_idx - 17],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
-                            if (Rank.of(square_idx) < .r7 and !board.squares[square_idx - 17].is_white()) {
+                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
-                                    .to = square_idx - 17,
+                                    .to = square_idx + 15,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 17],
+                                    .captured = board.squares[square_idx + 15],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
-                        if (File.of(square_idx) > .fb) {
-                            if (Rank.of(square_idx) > .r1 and !board.squares[square_idx - 10].is_white()) {
+                        if (File.of(square_idx) != .fh) {
+                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
+                                    .to = square_idx - 15,
+                                    .from = square_idx,
+                                    .captured = board.squares[square_idx - 15],
+                                    .promoted = .empty,
+                                    .en_passant_capture = false,
+                                    .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
+                                });
+                            }
+                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].is_white()) {
+                                this.add(.{
+                                    .to = square_idx + 17,
+                                    .from = square_idx,
+                                    .captured = board.squares[square_idx + 17],
+                                    .promoted = .empty,
+                                    .en_passant_capture = false,
+                                    .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
+                                });
+                            }
+                        }
+                        if (File.of(square_idx) != .fb and File.of(square_idx) != .fa) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].is_white()) {
+                                this.add(.{
                                     .to = square_idx - 10,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 10],
+                                    .captured = board.squares[square_idx - 10],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
-                            if (Rank.of(square_idx) < .r8 and !board.squares[square_idx + 6].is_white()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 6,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 6],
+                                    .captured = board.squares[square_idx + 6],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
-                        if (File.of(square_idx) < .fg) {
-                            if (Rank.of(square_idx) > .r1 and !board.squares[square_idx - 6].is_white()) {
+                        if (File.of(square_idx) != .fg and File.of(square_idx) != .fh) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 6,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 6],
+                                    .captured = board.squares[square_idx - 6],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
-                            if (Rank.of(square_idx) < .r8 and !board.squares[square_idx + 10].is_white()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 10,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 10],
+                                    .captured = board.squares[square_idx + 10],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
                     },
                     .white_bishop => {
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 9 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 9 * diagonal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9 * diagonal_idx],
+                                    .captured = board.squares[square_idx + 9 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx + 7 * diagonal_idx) == .fh or square_idx + 7 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 7 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 7 * diagonal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7 * diagonal_idx],
+                                    .captured = board.squares[square_idx + 7 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx - 9 * diagonal_idx) == .fh or square_idx - 9 * diagonal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 9 * diagonal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9 * diagonal_idx],
+                                    .captured = board.squares[square_idx - 9 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx - 7 * diagonal_idx) == .fa or square_idx - 7 * diagonal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 7 * diagonal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7 * diagonal_idx],
+                                    .captured = board.squares[square_idx - 7 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
@@ -411,113 +443,117 @@ pub const Movelist = struct {
                         }
                     },
                     .white_rook => {
-                        for (0..8) |horizontal_idx| {
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
                             if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + horizontal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + horizontal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
-                                    .captured = board.squares[square_idx + horizontal_idx].is_black(),
+                                    .captured = board.squares[square_idx + horizontal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |horizontal_idx| {
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
                             if (File.of(square_idx - horizontal_idx) == .fh or square_idx - horizontal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - horizontal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - horizontal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |vertical_idx| {
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
                             if (square_idx + 8 * vertical_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 8 * vertical_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 8 * vertical_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |vertical_idx| {
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
                             if (square_idx - 8 * vertical_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 8 * vertical_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
@@ -525,228 +561,236 @@ pub const Movelist = struct {
                         }
                     },
                     .white_queen => {
-                        for (0..8) |horizontal_idx| {
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
                             if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + horizontal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + horizontal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
-                                    .captured = board.squares[square_idx + horizontal_idx].is_black(),
+                                    .captured = board.squares[square_idx + horizontal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |horizontal_idx| {
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
                             if (File.of(square_idx - horizontal_idx) == .fh or square_idx - horizontal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - horizontal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - horizontal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |vertical_idx| {
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
                             if (square_idx + 8 * vertical_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 8 * vertical_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 8 * vertical_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |vertical_idx| {
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
                             if (square_idx - 8 * vertical_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 8 * vertical_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 9 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 9 * diagonal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9 * diagonal_idx],
+                                    .captured = board.squares[square_idx + 9 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx + 7 * diagonal_idx) == .fh or square_idx + 7 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 7 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 7 * diagonal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7 * diagonal_idx],
+                                    .captured = board.squares[square_idx + 7 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx - 9 * diagonal_idx) == .fh or square_idx - 9 * diagonal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 9 * diagonal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9 * diagonal_idx],
+                                    .captured = board.squares[square_idx - 9 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx - 7 * diagonal_idx) == .fa or square_idx - 7 * diagonal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 7 * diagonal_idx].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7 * diagonal_idx],
+                                    .captured = board.squares[square_idx - 7 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
@@ -755,123 +799,95 @@ pub const Movelist = struct {
                         }
                     },
                     .white_king => {
-                        // TODO: This could probably be refactored to be outside of the for loop
-                        if (@as(u1, @truncate(board.castle << Castle.white_kingside)) == 1 and
-                            board.squares[5] == .empty and board.squares[6] == .empty)
-                        {
-                            this.add(.{
-                                .castle = .white_kingside,
-                                .to = 6,
-                                .from = 4,
-                                .captured = .empty,
-                                .promoted = .empty,
-                                .en_passant_capture = false,
-                                .en_passant_square = 0,
-                            });
-                        }
-                        if (@as(u1, @truncate(board.castle << Castle.white_queenside)) == 1 and
-                            board.squares[1] == .empty and board.squares[2] == .empty and
-                            board.squares[3] == .empty)
-                        {
-                            this.add(.{
-                                .castle = .white_kingside,
-                                .to = 2,
-                                .from = 4,
-                                .captured = .empty,
-                                .promoted = .empty,
-                                .en_passant_capture = false,
-                                .en_passant_square = 0,
-                            });
-                        }
                         if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 8].is_white()) {
                             this.add(.{
-                                .castle = .none,
                                 .to = square_idx - 8,
                                 .from = square_idx,
                                 .captured = board.squares[square_idx - 8],
                                 .promoted = .empty,
                                 .en_passant_capture = false,
                                 .en_passant_square = 0,
+                                .en_passant_square_past = board.en_passant,
                             });
                         }
                         if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].is_white()) {
                             this.add(.{
-                                .castle = .none,
                                 .to = square_idx + 8,
                                 .from = square_idx,
                                 .captured = board.squares[square_idx + 8],
                                 .promoted = .empty,
                                 .en_passant_capture = false,
                                 .en_passant_square = 0,
+                                .en_passant_square_past = board.en_passant,
                             });
                         }
                         if (File.of(square_idx) != .fa) {
                             if (!board.squares[square_idx - 1].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 1,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 1],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 9],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 7],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
                         if (File.of(square_idx) != .fh) {
                             if (!board.squares[square_idx + 1].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 1,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 1],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 7],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 9],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
@@ -880,7 +896,9 @@ pub const Movelist = struct {
                 }
             }
         } else {
-            for (0..square_count) |square_idx| {
+            for (0..square_count) |square_idx_size| {
+                // TODO: Refactor this usize and u8 bs
+                const square_idx: u8 = @truncate(square_idx_size);
                 if (board.squares[square_idx].is_white() or board.squares[square_idx] == .empty) {
                     continue;
                 }
@@ -889,374 +907,402 @@ pub const Movelist = struct {
                         if (Rank.of(square_idx) == .r2) {
                             if (board.squares[square_idx - 8] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .black_queen,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .black_rook,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .black_bishop,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .black_knight,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx - 9].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9],
+                                    .captured = board.squares[square_idx - 9],
                                     .promoted = .black_queen,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9],
+                                    .captured = board.squares[square_idx - 9],
                                     .promoted = .black_rook,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9],
+                                    .captured = board.squares[square_idx - 9],
                                     .promoted = .black_bishop,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9],
+                                    .captured = board.squares[square_idx - 9],
                                     .promoted = .black_knight,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx - 7].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7],
+                                    .captured = board.squares[square_idx - 7],
                                     .promoted = .black_queen,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7],
+                                    .captured = board.squares[square_idx - 7],
                                     .promoted = .black_rook,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7],
+                                    .captured = board.squares[square_idx - 7],
                                     .promoted = .black_bishop,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7],
+                                    .captured = board.squares[square_idx - 7],
                                     .promoted = .black_knight,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         } else {
                             if (board.squares[square_idx - 8] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 if (Rank.of(square_idx) == .r7 and board.squares[square_idx - 16] == .empty) {
                                     this.add(.{
-                                        .castle = .none,
                                         .to = square_idx - 16,
                                         .from = square_idx,
                                         .captured = .empty,
                                         .promoted = .empty,
                                         .en_passant_capture = false,
                                         .en_passant_square = square_idx - 8,
+                                        .en_passant_square_past = board.en_passant,
                                     });
                                 }
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx - 9].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9],
+                                    .captured = board.squares[square_idx - 9],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             // Could explicitly check that the pawn is on the 4th rank but that is unnecessary
                             if (File.of(square_idx) != .fa and square_idx - 9 == board.en_passant) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9],
+                                    .captured = board.squares[square_idx - 9],
                                     .promoted = .empty,
                                     .en_passant_capture = true,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx - 7].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7],
+                                    .captured = board.squares[square_idx - 7],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             // Could explicitly check that the pawn is on the 4th rank but that is unnecessary
                             if (File.of(square_idx) != .fh and square_idx - 7 == board.en_passant) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7],
+                                    .captured = board.squares[square_idx - 7],
                                     .promoted = .empty,
                                     .en_passant_capture = true,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
                     },
                     .black_knight => {
                         if (File.of(square_idx) != .fa) {
-                            if (Rank.of(square_idx) > .r2 and !board.squares[square_idx - 17].is_black()) {
+                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 17,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 17],
+                                    .captured = board.squares[square_idx - 17],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
-                            if (Rank.of(square_idx) < .r7 and !board.squares[square_idx - 17].is_black()) {
+                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
-                                    .to = square_idx - 17,
+                                    .to = square_idx + 15,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 17],
+                                    .captured = board.squares[square_idx + 15],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
-                        if (File.of(square_idx) > .fb) {
-                            if (Rank.of(square_idx) > .r1 and !board.squares[square_idx - 10].is_black()) {
+                        if (File.of(square_idx) != .fh) {
+                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
+                                    .to = square_idx - 15,
+                                    .from = square_idx,
+                                    .captured = board.squares[square_idx - 15],
+                                    .promoted = .empty,
+                                    .en_passant_capture = false,
+                                    .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
+                                });
+                            }
+                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].is_black()) {
+                                this.add(.{
+                                    .to = square_idx + 17,
+                                    .from = square_idx,
+                                    .captured = board.squares[square_idx + 17],
+                                    .promoted = .empty,
+                                    .en_passant_capture = false,
+                                    .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
+                                });
+                            }
+                        }
+                        if (File.of(square_idx) != .fb and File.of(square_idx) != .fa) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].is_black()) {
+                                this.add(.{
                                     .to = square_idx - 10,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 10],
+                                    .captured = board.squares[square_idx - 10],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
-                            if (Rank.of(square_idx) < .r8 and !board.squares[square_idx + 6].is_black()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 6,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 6],
+                                    .captured = board.squares[square_idx + 6],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
-                        if (File.of(square_idx) < .fg) {
-                            if (Rank.of(square_idx) > .r1 and !board.squares[square_idx - 6].is_black()) {
+                        if (File.of(square_idx) != .fg and File.of(square_idx) != .fh) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 6,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 6],
+                                    .captured = board.squares[square_idx - 6],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
-                            if (Rank.of(square_idx) < .r8 and !board.squares[square_idx + 10].is_black()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 10,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 10],
+                                    .captured = board.squares[square_idx + 10],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
                     },
                     .black_bishop => {
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 9 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 9 * diagonal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9 * diagonal_idx],
+                                    .captured = board.squares[square_idx + 9 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx + 7 * diagonal_idx) == .fh or square_idx + 7 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 7 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 7 * diagonal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7 * diagonal_idx],
+                                    .captured = board.squares[square_idx + 7 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx - 9 * diagonal_idx) == .fh or square_idx - 9 * diagonal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 9 * diagonal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9 * diagonal_idx],
+                                    .captured = board.squares[square_idx - 9 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx - 7 * diagonal_idx) == .fa or square_idx - 7 * diagonal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 7 * diagonal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7 * diagonal_idx],
+                                    .captured = board.squares[square_idx - 7 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
@@ -1265,113 +1311,117 @@ pub const Movelist = struct {
                         }
                     },
                     .black_rook => {
-                        for (0..8) |horizontal_idx| {
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
                             if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + horizontal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + horizontal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
-                                    .captured = board.squares[square_idx + horizontal_idx].is_white(),
+                                    .captured = board.squares[square_idx + horizontal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |horizontal_idx| {
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
                             if (File.of(square_idx - horizontal_idx) == .fh or square_idx - horizontal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - horizontal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - horizontal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |vertical_idx| {
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
                             if (square_idx + 8 * vertical_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 8 * vertical_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 8 * vertical_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |vertical_idx| {
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
                             if (square_idx - 8 * vertical_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 8 * vertical_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
@@ -1379,228 +1429,236 @@ pub const Movelist = struct {
                         }
                     },
                     .black_queen => {
-                        for (0..8) |horizontal_idx| {
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
                             if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + horizontal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + horizontal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
-                                    .captured = board.squares[square_idx + horizontal_idx].is_white(),
+                                    .captured = board.squares[square_idx + horizontal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |horizontal_idx| {
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
                             if (File.of(square_idx - horizontal_idx) == .fh or square_idx - horizontal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - horizontal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - horizontal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |vertical_idx| {
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
                             if (square_idx + 8 * vertical_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 8 * vertical_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 8 * vertical_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |vertical_idx| {
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
                             if (square_idx - 8 * vertical_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 8 * vertical_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 9 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 9 * diagonal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 9 * diagonal_idx],
+                                    .captured = board.squares[square_idx + 9 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx + 7 * diagonal_idx) == .fh or square_idx + 7 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 7 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx + 7 * diagonal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx + 7 * diagonal_idx],
+                                    .captured = board.squares[square_idx + 7 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx - 9 * diagonal_idx) == .fh or square_idx - 9 * diagonal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 9 * diagonal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 9 * diagonal_idx],
+                                    .captured = board.squares[square_idx - 9 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
                                 break;
                             }
                         }
-                        for (0..8) |diagonal_idx| {
+                        for (0..8) |diagonal_idx_usize| {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
                             if (File.of(square_idx - 7 * diagonal_idx) == .fa or square_idx - 7 * diagonal_idx < 0) {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
                                     .captured = .empty,
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             } else if (board.squares[square_idx - 7 * diagonal_idx].is_white()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
-                                    .captured = .board.squares[square_idx - 7 * diagonal_idx],
+                                    .captured = board.squares[square_idx - 7 * diagonal_idx],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                                 break;
                             } else {
@@ -1609,123 +1667,95 @@ pub const Movelist = struct {
                         }
                     },
                     .black_king => {
-                        // TODO: This could probably be refactored to be outside of the for loop
-                        if (@as(u1, @truncate(board.castle << Castle.black_kingside)) == 1 and
-                            board.squares[61] == .empty and board.squares[62] == .empty)
-                        {
-                            this.add(.{
-                                .castle = .black_kingside,
-                                .to = 62,
-                                .from = 60,
-                                .captured = .empty,
-                                .promoted = .empty,
-                                .en_passant_capture = false,
-                                .en_passant_square = 0,
-                            });
-                        }
-                        if (@as(u1, @truncate(board.castle << Castle.black_queenside)) == 1 and
-                            board.squares[57] == .empty and board.squares[58] == .empty and
-                            board.squares[59] == .empty)
-                        {
-                            this.add(.{
-                                .castle = .black_kingside,
-                                .to = 58,
-                                .from = 60,
-                                .captured = .empty,
-                                .promoted = .empty,
-                                .en_passant_capture = false,
-                                .en_passant_square = 0,
-                            });
-                        }
                         if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 8].is_black()) {
                             this.add(.{
-                                .castle = .none,
                                 .to = square_idx - 8,
                                 .from = square_idx,
                                 .captured = board.squares[square_idx - 8],
                                 .promoted = .empty,
                                 .en_passant_capture = false,
                                 .en_passant_square = 0,
+                                .en_passant_square_past = board.en_passant,
                             });
                         }
                         if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].is_black()) {
                             this.add(.{
-                                .castle = .none,
                                 .to = square_idx + 8,
                                 .from = square_idx,
                                 .captured = board.squares[square_idx + 8],
                                 .promoted = .empty,
                                 .en_passant_capture = false,
                                 .en_passant_square = 0,
+                                .en_passant_square_past = board.en_passant,
                             });
                         }
                         if (File.of(square_idx) != .fa) {
                             if (!board.squares[square_idx - 1].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 1,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 1],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 9,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 9],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 7,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 7],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
                         if (File.of(square_idx) != .fh) {
                             if (!board.squares[square_idx + 1].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 1,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 1],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx - 7,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx - 7],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].is_black()) {
                                 this.add(.{
-                                    .castle = .none,
                                     .to = square_idx + 9,
                                     .from = square_idx,
                                     .captured = board.squares[square_idx + 9],
                                     .promoted = .empty,
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
+                                    .en_passant_square_past = board.en_passant,
                                 });
                             }
                         }
@@ -1734,6 +1764,22 @@ pub const Movelist = struct {
                 }
             }
         }
+    }
+    pub fn init() Movelist {
+        const move_empty: Move = .{
+            .from = 0,
+            .to = 0,
+            .en_passant_capture = false,
+            .en_passant_square = 0,
+            .en_passant_square_past = 0,
+            .captured = .empty,
+            .promoted = .empty,
+        };
+        const movelist: Movelist = .{
+            .move = [1]Move{move_empty} ** move_count_max,
+            .move_count = 0,
+        };
+        return movelist;
     }
     pub fn add(this: *@This(), move: Move) void {
         assert(this.move_count < move_count_max);
@@ -1745,12 +1791,28 @@ pub const Movelist = struct {
             this.move[move_idx] = .{
                 .from = 0,
                 .to = 0,
-                .en_passant = false,
+                .en_passant_capture = false,
+                .en_passant_square = 0,
+                .en_passant_square_past = 0,
                 .captured = .empty,
                 .promoted = .empty,
-                .castle = .none,
             };
         }
         this.move_count = 0;
+    }
+    pub fn print(this: *@This(), writer: anytype) !void {
+        try writer.print("Move count {} of {}\n", .{ this.move_count, move_count_max });
+        for (0..this.move_count) |move_idx| {
+            try writer.print("[{d:3}] => ({d:2} to {d:2}, en_passant ({}, sq {d:2}, past {d:2}), {}, {})\n", .{
+                move_idx,
+                this.move[move_idx].from,
+                this.move[move_idx].to,
+                this.move[move_idx].en_passant_capture,
+                this.move[move_idx].en_passant_square,
+                this.move[move_idx].en_passant_square_past,
+                this.move[move_idx].captured,
+                this.move[move_idx].promoted,
+            });
+        }
     }
 };
