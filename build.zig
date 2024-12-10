@@ -49,4 +49,19 @@ pub fn build(b: *std.Build) void {
     // This will evaluate the `run` step rather than the default, which is "install".
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&run_cmd.step);
+
+    const simulation_test_move = b.addExecutable(.{
+        .name = "test-move",
+        .root_source_file = b.path("src/test-move.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    b.installArtifact(simulation_test_move);
+    const test_move = b.addRunArtifact(simulation_test_move);
+    test_move.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        test_move.addArgs(args);
+    }
+    const test_move_step = b.step("test-move", "Run the simulator for move ops");
+    test_move_step.dependOn(&test_move.step);
 }
