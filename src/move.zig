@@ -322,7 +322,7 @@ pub const Movelist = struct {
                     },
                     .white_bishop => {
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
@@ -352,7 +352,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 7 * diagonal_idx) == .fh or square_idx + 7 * diagonal_idx > 63) {
                                 break;
                             }
@@ -382,8 +382,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
-                            if (File.of(square_idx - 9 * diagonal_idx) == .fh or square_idx - 9 * diagonal_idx < 0) {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
+                            if (square_idx < 9 * diagonal_idx or File.of(square_idx - 9 * diagonal_idx) == .fh) {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
@@ -412,8 +412,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
-                            if (File.of(square_idx - 7 * diagonal_idx) == .fa or square_idx - 7 * diagonal_idx < 0) {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
+                            if (square_idx < 7 * diagonal_idx or File.of(square_idx - 7 * diagonal_idx) == .fa) {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
@@ -444,7 +444,7 @@ pub const Movelist = struct {
                     },
                     .white_rook => {
                         for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
                             if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                                 break;
                             }
@@ -473,8 +473,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
-                            if (File.of(square_idx - horizontal_idx) == .fh or square_idx - horizontal_idx < 0) {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
+                            if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
@@ -502,7 +502,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
                             if (square_idx + 8 * vertical_idx > 63) {
                                 break;
                             }
@@ -531,8 +531,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
-                            if (square_idx - 8 * vertical_idx < 0) {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
+                            if (square_idx < 8 * vertical_idx) {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
@@ -562,7 +562,7 @@ pub const Movelist = struct {
                     },
                     .white_queen => {
                         for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
                             if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                                 break;
                             }
@@ -591,8 +591,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
-                            if (File.of(square_idx - horizontal_idx) == .fh or square_idx - horizontal_idx < 0) {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
+                            if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
@@ -620,7 +620,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
                             if (square_idx + 8 * vertical_idx > 63) {
                                 break;
                             }
@@ -649,8 +649,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
-                            if (square_idx - 8 * vertical_idx < 0) {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
+                            if (square_idx < 8 * vertical_idx) {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
@@ -678,7 +678,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
@@ -708,7 +708,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 7 * diagonal_idx) == .fh or square_idx + 7 * diagonal_idx > 63) {
                                 break;
                             }
@@ -738,8 +738,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
-                            if (File.of(square_idx - 9 * diagonal_idx) == .fh or square_idx - 9 * diagonal_idx < 0) {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
+                            if (square_idx < 9 * diagonal_idx or File.of(square_idx - 9 * diagonal_idx) == .fh) {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
@@ -768,8 +768,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
-                            if (File.of(square_idx - 7 * diagonal_idx) == .fa or square_idx - 7 * diagonal_idx < 0) {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
+                            if (square_idx < 7 * diagonal_idx or File.of(square_idx - 7 * diagonal_idx) == .fa) {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
@@ -1190,7 +1190,7 @@ pub const Movelist = struct {
                     },
                     .black_bishop => {
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
@@ -1220,7 +1220,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 7 * diagonal_idx) == .fh or square_idx + 7 * diagonal_idx > 63) {
                                 break;
                             }
@@ -1250,8 +1250,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
-                            if (File.of(square_idx - 9 * diagonal_idx) == .fh or square_idx - 9 * diagonal_idx < 0) {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
+                            if (square_idx < 9 * diagonal_idx or File.of(square_idx - 9 * diagonal_idx) == .fh) {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
@@ -1280,8 +1280,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
-                            if (File.of(square_idx - 7 * diagonal_idx) == .fa or square_idx - 7 * diagonal_idx < 0) {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
+                            if (square_idx < 7 * diagonal_idx or File.of(square_idx - 7 * diagonal_idx) == .fa) {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
@@ -1312,7 +1312,7 @@ pub const Movelist = struct {
                     },
                     .black_rook => {
                         for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
                             if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                                 break;
                             }
@@ -1341,8 +1341,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
-                            if (File.of(square_idx - horizontal_idx) == .fh or square_idx - horizontal_idx < 0) {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
+                            if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
@@ -1370,7 +1370,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
                             if (square_idx + 8 * vertical_idx > 63) {
                                 break;
                             }
@@ -1399,8 +1399,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
-                            if (square_idx - 8 * vertical_idx < 0) {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
+                            if (square_idx < 8 * vertical_idx) {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
@@ -1430,7 +1430,7 @@ pub const Movelist = struct {
                     },
                     .black_queen => {
                         for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
                             if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                                 break;
                             }
@@ -1459,8 +1459,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize);
-                            if (File.of(square_idx - horizontal_idx) == .fh or square_idx - horizontal_idx < 0) {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
+                            if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
@@ -1488,7 +1488,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
                             if (square_idx + 8 * vertical_idx > 63) {
                                 break;
                             }
@@ -1517,8 +1517,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize);
-                            if (square_idx - 8 * vertical_idx < 0) {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
+                            if (square_idx < 8 * vertical_idx) {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
@@ -1546,7 +1546,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
@@ -1576,7 +1576,7 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 7 * diagonal_idx) == .fh or square_idx + 7 * diagonal_idx > 63) {
                                 break;
                             }
@@ -1606,8 +1606,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
-                            if (File.of(square_idx - 9 * diagonal_idx) == .fh or square_idx - 9 * diagonal_idx < 0) {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
+                            if (square_idx < 9 * diagonal_idx or File.of(square_idx - 9 * diagonal_idx) == .fh) {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
@@ -1636,8 +1636,8 @@ pub const Movelist = struct {
                             }
                         }
                         for (0..8) |diagonal_idx_usize| {
-                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize);
-                            if (File.of(square_idx - 7 * diagonal_idx) == .fa or square_idx - 7 * diagonal_idx < 0) {
+                            const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
+                            if (square_idx < 7 * diagonal_idx or File.of(square_idx - 7 * diagonal_idx) == .fa) {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
