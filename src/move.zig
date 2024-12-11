@@ -1800,9 +1800,6 @@ pub const Movelist = struct {
             board.make_move(temporary.move[move_idx]);
             if (!board.is_check(color_check)) {
                 this.add(temporary.move[move_idx]);
-            } else {
-                @import("std").debug.print("Skip => ", .{});
-                temporary.move[move_idx].print();
             }
             board.undo_move(temporary.move[move_idx]);
         }
