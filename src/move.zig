@@ -1803,7 +1803,6 @@ pub const Movelist = struct {
             }
             board.undo_move(temporary.move[move_idx]);
         }
-        this.print();
     }
     pub fn init() Movelist {
         const move_empty: Move = .{
