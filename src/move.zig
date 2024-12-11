@@ -482,6 +482,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -511,6 +512,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -540,6 +542,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -569,6 +572,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -600,6 +604,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -629,6 +634,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -658,6 +664,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -687,6 +694,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1350,6 +1358,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1379,6 +1388,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1408,6 +1418,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1437,6 +1448,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1468,6 +1480,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1497,6 +1510,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1526,6 +1540,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1545,6 +1560,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_white()) {
                                 temporary.add(.{
                                     .to = square_idx - 8 * vertical_idx,
