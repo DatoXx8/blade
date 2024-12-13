@@ -8,6 +8,12 @@ pub const Color = enum(u1) {
     white,
     black,
 };
+pub const Result = enum(u4) {
+    white,
+    black,
+    draw,
+    none,
+};
 pub const Piece = enum(u4) {
     empty,
     white_pawn,
@@ -709,6 +715,21 @@ pub const Board = struct {
                 .black => "b",
             },
         });
+    }
+    pub fn result(this: *const @This(), movelist: *const Movelist) Result {
+        if (movelist.move_count == 0) {
+            if (this.is_check(this.side_to_move)) {
+                return switch (this.side_to_move) {
+                    .white => .white,
+                    .black => .black,
+                };
+            } else {
+                return .draw;
+            }
+        } else {
+            return .none;
+        }
+        //
     }
     pub fn debug(this: *const @This()) void {
         const std = @import("std");
