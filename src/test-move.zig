@@ -68,6 +68,7 @@ fn simulate_moves(starting: *Board, board: *Board, comptime move_num: u32, rng: 
         .en_passant_square_past = 0,
         .captured = .empty,
         .promoted = .empty,
+        .fifty_move_past = 0,
     };
 
     var movelist_saved: [move_num]Move = [1]Move{move_empty} ** move_num;
@@ -138,7 +139,7 @@ pub fn main() !void {
         false => rng_saved.?,
     };
 
-    const move_num: u32 = 40;
+    const move_num: u32 = 200;
     comptime {
         assert(move_num > 0);
     }
