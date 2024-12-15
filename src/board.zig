@@ -729,7 +729,6 @@ pub const Board = struct {
         } else {
             return .none;
         }
-        //
     }
     pub fn debug(this: *const @This()) void {
         const std = @import("std");
