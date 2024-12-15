@@ -252,11 +252,20 @@ pub const Board = struct {
             } else {
                 this.squares[move.to + 8] = .empty;
             }
+
+            this.fifty_move = 0;
         } else {
+            this.fifty_move = switch (move.promoted != .empty or move.captured != .empty or
+                this.squares[move.from] == .white_pawn or this.squares[move.from] == .black_pawn) {
+                true => 0,
+                false => this.fifty_move + 1,
+            };
+
             if (move.promoted == .empty) {
                 this.squares[move.to] = this.squares[move.from];
             } else {
                 this.squares[move.to] = move.promoted;
+                this.fifty_move = 0;
             }
             this.squares[move.from] = .empty;
         }
@@ -267,7 +276,6 @@ pub const Board = struct {
         // This is 0 in case en passant is not possible
         this.en_passant = move.en_passant_square;
         // this.castle = move.castle_perm;
-        this.fifty_move += 1;
     }
     pub fn undo_move(this: *@This(), move: Move) void {
         assert(this.squares[move.from] == .empty);
@@ -298,7 +306,7 @@ pub const Board = struct {
         };
         this.en_passant = move.en_passant_square_past;
         // this.castle = move.castle_perm_past;
-        this.fifty_move -= 1;
+        this.fifty_move = move.fifty_move_past;
     }
     pub fn copy_to(this: *const @This(), target: *Board) void {
         target.castle = this.castle;
