@@ -18,6 +18,7 @@ pub const Move = struct {
     promoted: Piece,
     // TODO: Figure out if there is a way to remove these
     en_passant_square_past: u8,
+    fifty_move_past: u8,
     pub fn print(this: *const @This()) void {
         const std = @import("std");
         std.debug.print("({d:2} to {d:2}, en_passant ({}, sq {d:2}, past {d:2}), {}, {})\n", .{
@@ -60,6 +61,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 8,
@@ -69,6 +71,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 8,
@@ -78,6 +81,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 8,
@@ -87,6 +91,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx + 7].is_black()) {
@@ -98,6 +103,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 7,
@@ -107,6 +113,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 7,
@@ -116,6 +123,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 7,
@@ -125,6 +133,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx + 9].is_black()) {
@@ -136,6 +145,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 9,
@@ -145,6 +155,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 9,
@@ -154,6 +165,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx + 9,
@@ -163,6 +175,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         } else {
@@ -175,6 +188,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 if (Rank.of(square_idx) == .r2 and board.squares[square_idx + 16] == .empty) {
                                     temporary.add(.{
@@ -185,6 +199,7 @@ pub const Movelist = struct {
                                         .en_passant_capture = false,
                                         .en_passant_square = square_idx + 8,
                                         .en_passant_square_past = board.en_passant,
+                                        .fifty_move_past = board.fifty_move,
                                     });
                                 }
                             }
@@ -197,6 +212,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             // Could explicitly check that the pawn is on the 5th rank but that is unnecessary
@@ -209,6 +225,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = true,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx + 9].is_black()) {
@@ -220,6 +237,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             // Could explicitly check that the pawn is on the 5th rank but that is unnecessary
@@ -232,6 +250,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = true,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -247,6 +266,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].is_white()) {
@@ -258,6 +278,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -271,6 +292,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].is_white()) {
@@ -282,6 +304,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -295,6 +318,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].is_white()) {
@@ -306,6 +330,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -319,6 +344,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].is_white()) {
@@ -330,6 +356,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -349,6 +376,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 9 * diagonal_idx].is_black()) {
                                 temporary.add(.{
@@ -359,6 +387,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -379,6 +408,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 7 * diagonal_idx].is_black()) {
                                 temporary.add(.{
@@ -389,6 +419,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -409,6 +440,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 9 * diagonal_idx].is_black()) {
                                 temporary.add(.{
@@ -419,6 +451,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -439,6 +472,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 7 * diagonal_idx].is_black()) {
                                 temporary.add(.{
@@ -449,6 +483,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -471,6 +506,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + horizontal_idx].is_black()) {
                                 temporary.add(.{
@@ -481,6 +517,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -501,6 +538,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - horizontal_idx].is_black()) {
                                 temporary.add(.{
@@ -511,6 +549,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -531,6 +570,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 8 * vertical_idx].is_black()) {
                                 temporary.add(.{
@@ -541,6 +581,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -561,6 +602,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_black()) {
                                 temporary.add(.{
@@ -571,6 +613,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -593,6 +636,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + horizontal_idx].is_black()) {
                                 temporary.add(.{
@@ -603,6 +647,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -623,6 +668,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - horizontal_idx].is_black()) {
                                 temporary.add(.{
@@ -633,6 +679,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -653,6 +700,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 8 * vertical_idx].is_black()) {
                                 temporary.add(.{
@@ -663,6 +711,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -683,6 +732,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_black()) {
                                 temporary.add(.{
@@ -693,6 +743,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -713,6 +764,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 9 * diagonal_idx].is_black()) {
                                 temporary.add(.{
@@ -723,6 +775,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -743,6 +796,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 7 * diagonal_idx].is_black()) {
                                 temporary.add(.{
@@ -753,6 +807,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -773,6 +828,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 9 * diagonal_idx].is_black()) {
                                 temporary.add(.{
@@ -783,6 +839,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -803,6 +860,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 7 * diagonal_idx].is_black()) {
                                 temporary.add(.{
@@ -813,6 +871,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -830,6 +889,7 @@ pub const Movelist = struct {
                                 .en_passant_capture = false,
                                 .en_passant_square = 0,
                                 .en_passant_square_past = board.en_passant,
+                                .fifty_move_past = board.fifty_move,
                             });
                         }
                         if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].is_white()) {
@@ -841,6 +901,7 @@ pub const Movelist = struct {
                                 .en_passant_capture = false,
                                 .en_passant_square = 0,
                                 .en_passant_square_past = board.en_passant,
+                                .fifty_move_past = board.fifty_move,
                             });
                         }
                         if (File.of(square_idx) != .fa) {
@@ -853,6 +914,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].is_white()) {
@@ -864,6 +926,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].is_white()) {
@@ -875,6 +938,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -888,6 +952,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].is_white()) {
@@ -899,6 +964,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].is_white()) {
@@ -910,6 +976,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -936,6 +1003,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 8,
@@ -945,6 +1013,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 8,
@@ -954,6 +1023,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 8,
@@ -963,6 +1033,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx - 9].is_white()) {
@@ -974,6 +1045,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 9,
@@ -983,6 +1055,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 9,
@@ -992,6 +1065,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 9,
@@ -1001,6 +1075,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx - 7].is_white()) {
@@ -1012,6 +1087,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 7,
@@ -1021,6 +1097,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 7,
@@ -1030,6 +1107,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 temporary.add(.{
                                     .to = square_idx - 7,
@@ -1039,6 +1117,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         } else {
@@ -1051,6 +1130,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 if (Rank.of(square_idx) == .r7 and board.squares[square_idx - 16] == .empty) {
                                     temporary.add(.{
@@ -1061,6 +1141,7 @@ pub const Movelist = struct {
                                         .en_passant_capture = false,
                                         .en_passant_square = square_idx - 8,
                                         .en_passant_square_past = board.en_passant,
+                                        .fifty_move_past = board.fifty_move,
                                     });
                                 }
                             }
@@ -1073,6 +1154,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             // Could explicitly check that the pawn is on the 4th rank but that is unnecessary
@@ -1085,6 +1167,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = true,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx - 7].is_white()) {
@@ -1096,6 +1179,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             // Could explicitly check that the pawn is on the 4th rank but that is unnecessary
@@ -1108,6 +1192,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = true,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -1123,6 +1208,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].is_black()) {
@@ -1134,6 +1220,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -1147,6 +1234,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].is_black()) {
@@ -1158,6 +1246,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -1171,6 +1260,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].is_black()) {
@@ -1182,6 +1272,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -1195,6 +1286,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].is_black()) {
@@ -1206,6 +1298,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -1225,6 +1318,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 9 * diagonal_idx].is_white()) {
                                 temporary.add(.{
@@ -1235,6 +1329,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1255,6 +1350,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 7 * diagonal_idx].is_white()) {
                                 temporary.add(.{
@@ -1265,6 +1361,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1285,6 +1382,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 9 * diagonal_idx].is_white()) {
                                 temporary.add(.{
@@ -1295,6 +1393,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1315,6 +1414,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 7 * diagonal_idx].is_white()) {
                                 temporary.add(.{
@@ -1325,6 +1425,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1347,6 +1448,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + horizontal_idx].is_white()) {
                                 temporary.add(.{
@@ -1357,6 +1459,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1377,6 +1480,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - horizontal_idx].is_white()) {
                                 temporary.add(.{
@@ -1387,6 +1491,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1407,6 +1512,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 8 * vertical_idx].is_white()) {
                                 temporary.add(.{
@@ -1417,6 +1523,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1437,6 +1544,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_white()) {
                                 temporary.add(.{
@@ -1447,6 +1555,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1469,6 +1578,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + horizontal_idx].is_white()) {
                                 temporary.add(.{
@@ -1479,6 +1589,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1499,6 +1610,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - horizontal_idx].is_white()) {
                                 temporary.add(.{
@@ -1509,6 +1621,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1529,6 +1642,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 8 * vertical_idx].is_white()) {
                                 temporary.add(.{
@@ -1539,6 +1653,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1559,6 +1674,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_white()) {
                                 temporary.add(.{
@@ -1569,6 +1685,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1589,6 +1706,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 9 * diagonal_idx].is_white()) {
                                 temporary.add(.{
@@ -1599,6 +1717,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1619,6 +1738,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx + 7 * diagonal_idx].is_white()) {
                                 temporary.add(.{
@@ -1629,6 +1749,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1649,6 +1770,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 9 * diagonal_idx].is_white()) {
                                 temporary.add(.{
@@ -1659,6 +1781,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1679,6 +1802,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             } else if (board.squares[square_idx - 7 * diagonal_idx].is_white()) {
                                 temporary.add(.{
@@ -1689,6 +1813,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                                 break;
                             } else {
@@ -1706,6 +1831,7 @@ pub const Movelist = struct {
                                 .en_passant_capture = false,
                                 .en_passant_square = 0,
                                 .en_passant_square_past = board.en_passant,
+                                .fifty_move_past = board.fifty_move,
                             });
                         }
                         if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].is_black()) {
@@ -1717,6 +1843,7 @@ pub const Movelist = struct {
                                 .en_passant_capture = false,
                                 .en_passant_square = 0,
                                 .en_passant_square_past = board.en_passant,
+                                .fifty_move_past = board.fifty_move,
                             });
                         }
                         if (File.of(square_idx) != .fa) {
@@ -1729,6 +1856,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].is_black()) {
@@ -1740,6 +1868,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].is_black()) {
@@ -1751,6 +1880,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -1764,6 +1894,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].is_black()) {
@@ -1775,6 +1906,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].is_black()) {
@@ -1786,6 +1918,7 @@ pub const Movelist = struct {
                                     .en_passant_capture = false,
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
+                                    .fifty_move_past = board.fifty_move,
                                 });
                             }
                         }
@@ -1815,6 +1948,7 @@ pub const Movelist = struct {
             .en_passant_square_past = 0,
             .captured = .empty,
             .promoted = .empty,
+            .fifty_move_past = 0,
         };
         const movelist: Movelist = .{
             .move = [1]Move{move_empty} ** move_count_max,
@@ -1837,6 +1971,7 @@ pub const Movelist = struct {
                 .en_passant_square_past = 0,
                 .captured = .empty,
                 .promoted = .empty,
+                .fifty_move_past = 0,
             };
         }
         this.move_count = 0;
