@@ -18,7 +18,7 @@ pub const Move = struct {
     promoted: Piece,
     // TODO: Figure out if there is a way to remove these
     en_passant_square_past: u8,
-    pub fn print(this: *@This()) void {
+    pub fn print(this: *const @This()) void {
         const std = @import("std");
         std.debug.print("({d:2} to {d:2}, en_passant ({}, sq {d:2}, past {d:2}), {}, {})\n", .{
             this.from,
@@ -1560,7 +1560,6 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
-                                break;
                             } else if (board.squares[square_idx - 8 * vertical_idx].is_white()) {
                                 temporary.add(.{
                                     .to = square_idx - 8 * vertical_idx,
@@ -1571,6 +1570,7 @@ pub const Movelist = struct {
                                     .en_passant_square = 0,
                                     .en_passant_square_past = board.en_passant,
                                 });
+                                break;
                             } else {
                                 break;
                             }
@@ -1798,9 +1798,11 @@ pub const Movelist = struct {
         for (0..temporary.move_count) |move_idx| {
             const color_check: Color = board.side_to_move;
             board.make_move(temporary.move[move_idx]);
+
             if (!board.is_check(color_check)) {
                 this.add(temporary.move[move_idx]);
             }
+
             board.undo_move(temporary.move[move_idx]);
         }
     }
@@ -1839,7 +1841,7 @@ pub const Movelist = struct {
         }
         this.move_count = 0;
     }
-    pub fn print(this: *@This()) void {
+    pub fn print(this: *const @This()) void {
         const std = @import("std");
         std.debug.print("Move count {} of {}\n", .{ this.move_count, move_count_max });
         for (0..this.move_count) |move_idx| {
