@@ -71,16 +71,26 @@ fn simulate_moves(starting: *Board, board: *Board, comptime move_num: u32, rng: 
     };
 
     var movelist_saved: [move_num]Move = [1]Move{move_empty} ** move_num;
+    var move_played: usize = 0;
     for (0..move_num) |movelist_idx| {
         movelist.clear();
         movelist.generate(board);
+
+        if (board.result(&movelist) != .none) {
+            break;
+        }
+
         const move_idx: u32 = Pcg.rand_below(movelist.move_count);
         movelist_saved[movelist_idx] = movelist.move[move_idx];
+
         board.make_move(movelist.move[move_idx]);
+
+        move_played = movelist_idx + 1;
     }
-    for (0..move_num) |movelist_idx| {
-        board.undo_move(movelist_saved[move_num - (movelist_idx + 1)]);
+    for (0..move_played) |movelist_idx| {
+        board.undo_move(movelist_saved[move_played - (movelist_idx + 1)]);
     }
+
     assert(starting.castle == board.castle);
     assert(starting.en_passant == board.en_passant);
     assert(starting.side_to_move == board.side_to_move);
@@ -88,6 +98,7 @@ fn simulate_moves(starting: *Board, board: *Board, comptime move_num: u32, rng: 
     for (0..square_count) |square_idx| {
         assert(starting.squares[square_idx] == board.squares[square_idx]);
     }
+    std.debug.print(" passed\n", .{});
 }
 
 // TODO: Move tests to seperate directory
@@ -127,7 +138,7 @@ pub fn main() !void {
         false => rng_saved.?,
     };
 
-    const move_num: u32 = 20;
+    const move_num: u32 = 40;
     comptime {
         assert(move_num > 0);
     }
