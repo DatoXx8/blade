@@ -241,7 +241,8 @@ pub const Board = struct {
         }
     }
     pub fn make_move(this: *@This(), move: Move) void {
-        assert(this.fifty_move < 100);
+        // Less than 101 because of a kinda stupid way the move generation works
+        assert(this.fifty_move < 101);
         assert(this.squares[move.to] == move.captured);
         if (move.en_passant_capture) {
             this.squares[move.to] = this.squares[move.from];
@@ -727,7 +728,11 @@ pub const Board = struct {
                 return .draw;
             }
         } else {
-            return .none;
+            if (this.fifty_move >= 100) {
+                return .draw;
+            } else {
+                return .none;
+            }
         }
     }
     pub fn debug(this: *const @This()) void {
