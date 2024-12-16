@@ -152,13 +152,13 @@ pub fn main() !void {
         // rng + loop_idx "wastes" the least seeds but it could cause issues
         // when running multiple threads with this because you then run the same tests over and over again
         while (true) {
-            std.debug.print("{} => ", .{loop_idx});
+            std.debug.print("[{}] => ", .{loop_idx});
             simulate_moves(&starting, &board, move_num, rng + loop_idx);
             loop_idx += 1;
         }
     } else {
         for (0..loop_count) |loop_idx| {
-            std.debug.print("{} => ", .{loop_idx});
+            std.debug.print("[{}] => ", .{loop_idx});
             simulate_moves(&starting, &board, move_num, rng + loop_idx);
         }
     }
