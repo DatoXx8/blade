@@ -317,96 +317,89 @@ pub const Board = struct {
             target.squares[square_idx] = this.squares[square_idx];
         }
     }
-    /// Check if the player `color` is in check
-    pub fn is_check(this: *const @This(), color: Color) bool {
-        if (color == .white) {
-            var square_king: u8 = 64;
-            for (0..square_count) |square_idx| {
-                if (this.squares[square_idx] == .white_king) {
-                    square_king = @truncate(square_idx);
-                    break;
-                }
-            }
-            assert(square_king < 64);
+    /// Check if the square it index `square_idx` is attacked by a piece of opposite color to `color`
+    pub fn is_square_attacked(this: *const @This(), square_idx: u8, color: Color) bool {
+        assert(square_idx < 64);
 
-            if (File.of(square_king) != .fa and this.squares[square_king - 1] == .black_king) {
+        if (color == .white) {
+            if (File.of(square_idx) != .fa and this.squares[square_idx - 1] == .black_king) {
                 return true;
             }
-            if (File.of(square_king) != .fh and this.squares[square_king + 1] == .black_king) {
+            if (File.of(square_idx) != .fh and this.squares[square_idx + 1] == .black_king) {
                 return true;
             }
-            if (Rank.of(square_king) != .r8) {
-                if (this.squares[square_king + 8] == .black_king) {
+            if (Rank.of(square_idx) != .r8) {
+                if (this.squares[square_idx + 8] == .black_king) {
                     return true;
                 }
-                if (File.of(square_king) != .fa) {
-                    if (this.squares[square_king + 7] == .black_pawn) {
+                if (File.of(square_idx) != .fa) {
+                    if (this.squares[square_idx + 7] == .black_pawn) {
                         return true;
                     }
-                    if (File.of(square_king) != .fb and this.squares[square_king + 6] == .black_knight) {
+                    if (File.of(square_idx) != .fb and this.squares[square_idx + 6] == .black_knight) {
                         return true;
                     }
-                    if (this.squares[square_king + 7] == .black_king) {
-                        return true;
-                    }
-                }
-                if (File.of(square_king) != .fh) {
-                    if (this.squares[square_king + 9] == .black_pawn) {
-                        return true;
-                    }
-                    if (File.of(square_king) != .fg and this.squares[square_king + 10] == .black_knight) {
-                        return true;
-                    }
-                    if (this.squares[square_king + 9] == .black_king) {
+                    if (this.squares[square_idx + 7] == .black_king) {
                         return true;
                     }
                 }
-                if (Rank.of(square_king) != .r7) {
-                    if (File.of(square_king) != .fa and this.squares[square_king + 15] == .black_knight) {
+                if (File.of(square_idx) != .fh) {
+                    if (this.squares[square_idx + 9] == .black_pawn) {
                         return true;
                     }
-                    if (File.of(square_king) != .fh and this.squares[square_king + 17] == .black_knight) {
+                    if (File.of(square_idx) != .fg and this.squares[square_idx + 10] == .black_knight) {
+                        return true;
+                    }
+                    if (this.squares[square_idx + 9] == .black_king) {
+                        return true;
+                    }
+                }
+                if (Rank.of(square_idx) != .r7) {
+                    if (File.of(square_idx) != .fa and this.squares[square_idx + 15] == .black_knight) {
+                        return true;
+                    }
+                    if (File.of(square_idx) != .fh and this.squares[square_idx + 17] == .black_knight) {
                         return true;
                     }
                 }
             }
-            if (Rank.of(square_king) != .r1) {
-                if (this.squares[square_king - 8] == .black_king) {
+            if (Rank.of(square_idx) != .r1) {
+                if (this.squares[square_idx - 8] == .black_king) {
                     return true;
                 }
-                if (File.of(square_king) != .fa) {
-                    if (File.of(square_king) != .fb and this.squares[square_king - 10] == .black_knight) {
+                if (File.of(square_idx) != .fa) {
+                    if (File.of(square_idx) != .fb and this.squares[square_idx - 10] == .black_knight) {
                         return true;
                     }
-                    if (this.squares[square_king - 9] == .black_king) {
-                        return true;
-                    }
-                }
-                if (File.of(square_king) != .fh) {
-                    if (File.of(square_king) != .fg and this.squares[square_king - 6] == .black_knight) {
-                        return true;
-                    }
-                    if (this.squares[square_king - 7] == .black_king) {
+                    if (this.squares[square_idx - 9] == .black_king) {
                         return true;
                     }
                 }
-                if (Rank.of(square_king) != .r2) {
-                    if (File.of(square_king) != .fa and this.squares[square_king - 17] == .black_knight) {
+                if (File.of(square_idx) != .fh) {
+                    if (File.of(square_idx) != .fg and this.squares[square_idx - 6] == .black_knight) {
                         return true;
                     }
-                    if (File.of(square_king) != .fh and this.squares[square_king - 15] == .black_knight) {
+                    if (this.squares[square_idx - 7] == .black_king) {
+                        return true;
+                    }
+                }
+                if (Rank.of(square_idx) != .r2) {
+                    if (File.of(square_idx) != .fa and this.squares[square_idx - 17] == .black_knight) {
+                        return true;
+                    }
+                    if (File.of(square_idx) != .fh and this.squares[square_idx - 15] == .black_knight) {
                         return true;
                     }
                 }
             }
             for (0..8) |diagonal_idx_usize| {
                 const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
-                if (square_king + 7 * diagonal_idx > 63 or File.of(square_king + 7 * diagonal_idx) == .fh) {
+                if (square_idx + 7 * diagonal_idx > 63 or File.of(square_idx + 7 * diagonal_idx) == .fh) {
                     break;
                 }
-                if (this.squares[square_king + 7 * diagonal_idx] == .empty) {
+                if (this.squares[square_idx + 7 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king + 7 * diagonal_idx].is_black_diagonal()) {
+                } else if (this.squares[square_idx + 7 * diagonal_idx].is_black_diagonal()) {
                     return true;
                 } else {
                     break;
@@ -414,12 +407,12 @@ pub const Board = struct {
             }
             for (0..8) |diagonal_idx_usize| {
                 const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
-                if (square_king + 9 * diagonal_idx > 63 or File.of(square_king + 9 * diagonal_idx) == .fa) {
+                if (square_idx + 9 * diagonal_idx > 63 or File.of(square_idx + 9 * diagonal_idx) == .fa) {
                     break;
                 }
-                if (this.squares[square_king + 9 * diagonal_idx] == .empty) {
+                if (this.squares[square_idx + 9 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king + 9 * diagonal_idx].is_black_diagonal()) {
+                } else if (this.squares[square_idx + 9 * diagonal_idx].is_black_diagonal()) {
                     return true;
                 } else {
                     break;
@@ -427,12 +420,12 @@ pub const Board = struct {
             }
             for (0..8) |diagonal_idx_usize| {
                 const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
-                if (square_king < 7 * diagonal_idx or File.of(square_king - 7 * diagonal_idx) == .fa) {
+                if (square_idx < 7 * diagonal_idx or File.of(square_idx - 7 * diagonal_idx) == .fa) {
                     break;
                 }
-                if (this.squares[square_king - 7 * diagonal_idx] == .empty) {
+                if (this.squares[square_idx - 7 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king - 7 * diagonal_idx].is_black_diagonal()) {
+                } else if (this.squares[square_idx - 7 * diagonal_idx].is_black_diagonal()) {
                     return true;
                 } else {
                     break;
@@ -440,12 +433,12 @@ pub const Board = struct {
             }
             for (0..8) |diagonal_idx_usize| {
                 const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
-                if (square_king < 9 * diagonal_idx or File.of(square_king - 9 * diagonal_idx) == .fh) {
+                if (square_idx < 9 * diagonal_idx or File.of(square_idx - 9 * diagonal_idx) == .fh) {
                     break;
                 }
-                if (this.squares[square_king - 9 * diagonal_idx] == .empty) {
+                if (this.squares[square_idx - 9 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king - 9 * diagonal_idx].is_black_diagonal()) {
+                } else if (this.squares[square_idx - 9 * diagonal_idx].is_black_diagonal()) {
                     return true;
                 } else {
                     break;
@@ -453,12 +446,12 @@ pub const Board = struct {
             }
             for (0..8) |vertical_idx_usize| {
                 const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
-                if (square_king + 8 * vertical_idx > 63) {
+                if (square_idx + 8 * vertical_idx > 63) {
                     break;
                 }
-                if (this.squares[square_king + 8 * vertical_idx] == .empty) {
+                if (this.squares[square_idx + 8 * vertical_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king + 8 * vertical_idx].is_black_slide()) {
+                } else if (this.squares[square_idx + 8 * vertical_idx].is_black_slide()) {
                     return true;
                 } else {
                     break;
@@ -466,12 +459,12 @@ pub const Board = struct {
             }
             for (0..8) |vertical_idx_usize| {
                 const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
-                if (square_king < 8 * vertical_idx) {
+                if (square_idx < 8 * vertical_idx) {
                     break;
                 }
-                if (this.squares[square_king - 8 * vertical_idx] == .empty) {
+                if (this.squares[square_idx - 8 * vertical_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king - 8 * vertical_idx].is_black_slide()) {
+                } else if (this.squares[square_idx - 8 * vertical_idx].is_black_slide()) {
                     return true;
                 } else {
                     break;
@@ -479,12 +472,12 @@ pub const Board = struct {
             }
             for (0..8) |horizontal_idx_usize| {
                 const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
-                if (File.of(square_king + horizontal_idx) == .fa or square_king + horizontal_idx > 63) {
+                if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                     break;
                 }
-                if (this.squares[square_king + horizontal_idx] == .empty) {
+                if (this.squares[square_idx + horizontal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king + horizontal_idx].is_black_slide()) {
+                } else if (this.squares[square_idx + horizontal_idx].is_black_slide()) {
                     return true;
                 } else {
                     break;
@@ -492,105 +485,96 @@ pub const Board = struct {
             }
             for (0..8) |horizontal_idx_usize| {
                 const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
-                if (square_king < horizontal_idx or File.of(square_king - horizontal_idx) == .fh) {
+                if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
                     break;
                 }
-                if (this.squares[square_king - horizontal_idx] == .empty) {
+                if (this.squares[square_idx - horizontal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king - horizontal_idx].is_black_slide()) {
+                } else if (this.squares[square_idx - horizontal_idx].is_black_slide()) {
                     return true;
                 } else {
                     break;
                 }
             }
         } else {
-            var square_king: u8 = 64;
-            for (0..square_count) |square_idx| {
-                if (this.squares[square_idx] == .black_king) {
-                    square_king = @truncate(square_idx);
-                    break;
-                }
-            }
-            assert(square_king < 64);
-
-            if (File.of(square_king) != .fa and this.squares[square_king - 1] == .white_king) {
+            if (File.of(square_idx) != .fa and this.squares[square_idx - 1] == .white_king) {
                 return true;
             }
-            if (File.of(square_king) != .fh and this.squares[square_king + 1] == .white_king) {
+            if (File.of(square_idx) != .fh and this.squares[square_idx + 1] == .white_king) {
                 return true;
             }
-            if (Rank.of(square_king) != .r8) {
-                if (this.squares[square_king + 8] == .white_king) {
+            if (Rank.of(square_idx) != .r8) {
+                if (this.squares[square_idx + 8] == .white_king) {
                     return true;
                 }
-                if (File.of(square_king) != .fa) {
-                    if (File.of(square_king) != .fb and this.squares[square_king + 6] == .white_knight) {
+                if (File.of(square_idx) != .fa) {
+                    if (File.of(square_idx) != .fb and this.squares[square_idx + 6] == .white_knight) {
                         return true;
                     }
-                    if (this.squares[square_king + 7] == .white_king) {
-                        return true;
-                    }
-                }
-                if (File.of(square_king) != .fh) {
-                    if (File.of(square_king) != .fg and this.squares[square_king + 10] == .white_knight) {
-                        return true;
-                    }
-                    if (this.squares[square_king + 9] == .white_king) {
+                    if (this.squares[square_idx + 7] == .white_king) {
                         return true;
                     }
                 }
-                if (Rank.of(square_king) != .r7) {
-                    if (File.of(square_king) != .fa and this.squares[square_king + 15] == .white_knight) {
+                if (File.of(square_idx) != .fh) {
+                    if (File.of(square_idx) != .fg and this.squares[square_idx + 10] == .white_knight) {
                         return true;
                     }
-                    if (File.of(square_king) != .fh and this.squares[square_king + 17] == .white_knight) {
+                    if (this.squares[square_idx + 9] == .white_king) {
+                        return true;
+                    }
+                }
+                if (Rank.of(square_idx) != .r7) {
+                    if (File.of(square_idx) != .fa and this.squares[square_idx + 15] == .white_knight) {
+                        return true;
+                    }
+                    if (File.of(square_idx) != .fh and this.squares[square_idx + 17] == .white_knight) {
                         return true;
                     }
                 }
             }
-            if (Rank.of(square_king) != .r1) {
-                if (this.squares[square_king - 8] == .white_king) {
+            if (Rank.of(square_idx) != .r1) {
+                if (this.squares[square_idx - 8] == .white_king) {
                     return true;
                 }
-                if (File.of(square_king) != .fa) {
-                    if (File.of(square_king) != .fb and this.squares[square_king - 10] == .white_knight) {
+                if (File.of(square_idx) != .fa) {
+                    if (File.of(square_idx) != .fb and this.squares[square_idx - 10] == .white_knight) {
                         return true;
                     }
-                    if (this.squares[square_king - 9] == .white_king) {
+                    if (this.squares[square_idx - 9] == .white_king) {
                         return true;
                     }
-                    if (this.squares[square_king - 9] == .white_pawn) {
-                        return true;
-                    }
-                }
-                if (File.of(square_king) != .fh) {
-                    if (File.of(square_king) != .fg and this.squares[square_king - 6] == .white_knight) {
-                        return true;
-                    }
-                    if (this.squares[square_king - 7] == .white_king) {
-                        return true;
-                    }
-                    if (this.squares[square_king - 7] == .white_pawn) {
+                    if (this.squares[square_idx - 9] == .white_pawn) {
                         return true;
                     }
                 }
-                if (Rank.of(square_king) != .r2) {
-                    if (File.of(square_king) != .fa and this.squares[square_king - 17] == .white_knight) {
+                if (File.of(square_idx) != .fh) {
+                    if (File.of(square_idx) != .fg and this.squares[square_idx - 6] == .white_knight) {
                         return true;
                     }
-                    if (File.of(square_king) != .fh and this.squares[square_king - 15] == .white_knight) {
+                    if (this.squares[square_idx - 7] == .white_king) {
+                        return true;
+                    }
+                    if (this.squares[square_idx - 7] == .white_pawn) {
+                        return true;
+                    }
+                }
+                if (Rank.of(square_idx) != .r2) {
+                    if (File.of(square_idx) != .fa and this.squares[square_idx - 17] == .white_knight) {
+                        return true;
+                    }
+                    if (File.of(square_idx) != .fh and this.squares[square_idx - 15] == .white_knight) {
                         return true;
                     }
                 }
             }
             for (0..8) |diagonal_idx_usize| {
                 const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
-                if (square_king + 7 * diagonal_idx > 63 or File.of(square_king + 7 * diagonal_idx) == .fh) {
+                if (square_idx + 7 * diagonal_idx > 63 or File.of(square_idx + 7 * diagonal_idx) == .fh) {
                     break;
                 }
-                if (this.squares[square_king + 7 * diagonal_idx] == .empty) {
+                if (this.squares[square_idx + 7 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king + 7 * diagonal_idx].is_white_diagonal()) {
+                } else if (this.squares[square_idx + 7 * diagonal_idx].is_white_diagonal()) {
                     return true;
                 } else {
                     break;
@@ -598,12 +582,12 @@ pub const Board = struct {
             }
             for (0..8) |diagonal_idx_usize| {
                 const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
-                if (square_king + 9 * diagonal_idx > 63 or File.of(square_king + 9 * diagonal_idx) == .fa) {
+                if (square_idx + 9 * diagonal_idx > 63 or File.of(square_idx + 9 * diagonal_idx) == .fa) {
                     break;
                 }
-                if (this.squares[square_king + 9 * diagonal_idx] == .empty) {
+                if (this.squares[square_idx + 9 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king + 9 * diagonal_idx].is_white_diagonal()) {
+                } else if (this.squares[square_idx + 9 * diagonal_idx].is_white_diagonal()) {
                     return true;
                 } else {
                     break;
@@ -611,12 +595,12 @@ pub const Board = struct {
             }
             for (0..8) |diagonal_idx_usize| {
                 const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
-                if (square_king < 7 * diagonal_idx or File.of(square_king - 7 * diagonal_idx) == .fa) {
+                if (square_idx < 7 * diagonal_idx or File.of(square_idx - 7 * diagonal_idx) == .fa) {
                     break;
                 }
-                if (this.squares[square_king - 7 * diagonal_idx] == .empty) {
+                if (this.squares[square_idx - 7 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king - 7 * diagonal_idx].is_white_diagonal()) {
+                } else if (this.squares[square_idx - 7 * diagonal_idx].is_white_diagonal()) {
                     return true;
                 } else {
                     break;
@@ -624,12 +608,12 @@ pub const Board = struct {
             }
             for (0..8) |diagonal_idx_usize| {
                 const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
-                if (square_king < 9 * diagonal_idx or File.of(square_king - 9 * diagonal_idx) == .fh) {
+                if (square_idx < 9 * diagonal_idx or File.of(square_idx - 9 * diagonal_idx) == .fh) {
                     break;
                 }
-                if (this.squares[square_king - 9 * diagonal_idx] == .empty) {
+                if (this.squares[square_idx - 9 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king - 9 * diagonal_idx].is_white_diagonal()) {
+                } else if (this.squares[square_idx - 9 * diagonal_idx].is_white_diagonal()) {
                     return true;
                 } else {
                     break;
@@ -637,12 +621,12 @@ pub const Board = struct {
             }
             for (0..8) |vertical_idx_usize| {
                 const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
-                if (square_king + 8 * vertical_idx > 63) {
+                if (square_idx + 8 * vertical_idx > 63) {
                     break;
                 }
-                if (this.squares[square_king + 8 * vertical_idx] == .empty) {
+                if (this.squares[square_idx + 8 * vertical_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king + 8 * vertical_idx].is_white_slide()) {
+                } else if (this.squares[square_idx + 8 * vertical_idx].is_white_slide()) {
                     return true;
                 } else {
                     break;
@@ -650,12 +634,12 @@ pub const Board = struct {
             }
             for (0..8) |vertical_idx_usize| {
                 const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
-                if (square_king < 8 * vertical_idx) {
+                if (square_idx < 8 * vertical_idx) {
                     break;
                 }
-                if (this.squares[square_king - 8 * vertical_idx] == .empty) {
+                if (this.squares[square_idx - 8 * vertical_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king - 8 * vertical_idx].is_white_slide()) {
+                } else if (this.squares[square_idx - 8 * vertical_idx].is_white_slide()) {
                     return true;
                 } else {
                     break;
@@ -663,12 +647,12 @@ pub const Board = struct {
             }
             for (0..8) |horizontal_idx_usize| {
                 const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
-                if (File.of(square_king + horizontal_idx) == .fa or square_king + horizontal_idx > 63) {
+                if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
                     break;
                 }
-                if (this.squares[square_king + horizontal_idx] == .empty) {
+                if (this.squares[square_idx + horizontal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king + horizontal_idx].is_white_slide()) {
+                } else if (this.squares[square_idx + horizontal_idx].is_white_slide()) {
                     return true;
                 } else {
                     break;
@@ -676,12 +660,12 @@ pub const Board = struct {
             }
             for (0..8) |horizontal_idx_usize| {
                 const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
-                if (square_king < horizontal_idx or File.of(square_king - horizontal_idx) == .fh) {
+                if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
                     break;
                 }
-                if (this.squares[square_king - horizontal_idx] == .empty) {
+                if (this.squares[square_idx - horizontal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_king - horizontal_idx].is_white_slide()) {
+                } else if (this.squares[square_idx - horizontal_idx].is_white_slide()) {
                     return true;
                 } else {
                     break;
@@ -689,6 +673,23 @@ pub const Board = struct {
             }
         }
         return false;
+    }
+    /// Check if the player `color` is in check
+    pub fn is_check(this: *const @This(), color: Color) bool {
+        const king_target: Piece = switch (color) {
+            .white => .white_king,
+            .black => .black_king,
+        };
+        var square_king: u8 = 64;
+        for (0..square_count) |square_idx| {
+            if (this.squares[square_idx] == king_target) {
+                square_king = @truncate(square_idx);
+                break;
+            }
+        }
+        assert(square_king < 64);
+
+        return this.is_square_attacked(square_king, color);
     }
     pub fn print(this: *const @This()) void {
         // Print this way to have a1 be the bottom left square with index 0
