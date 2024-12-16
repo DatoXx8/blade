@@ -52,8 +52,6 @@ pub const Piece = enum(u4) {
     }
 };
 
-/// TODO: This
-/// Accessed through (castle << @intFromEnum(...))
 pub const Castle = enum(u4) {
     none,
     white_kingside,
@@ -97,8 +95,8 @@ pub const Board = struct {
     en_passant: u8,
     /// Counted in half-moves
     fifty_move: u8,
-    castle: u8,
     side_to_move: Color,
+    castle: u8,
     pub fn alloc(fen: ?[]const u8) Board {
         var board: Board = .{
             .squares = .{.empty} ** 64,
@@ -244,6 +242,27 @@ pub const Board = struct {
         // Less than 101 because of a kinda stupid way the move generation works
         assert(this.fifty_move < 101);
         assert(this.squares[move.to] == move.captured);
+
+        // TODO: Refactor this sucker...
+        if (Rank.of(move.from) == .r1) {
+            if (File.of(move.from) == .fa and this.squares[move.from] == .white_rook) {
+                this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.white_queenside)));
+            } else if (File.of(move.from) == .fh and this.squares[move.from] == .white_rook) {
+                this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.white_kingside)));
+            }
+        } else if (Rank.of(move.from) == .r8) {
+            if (File.of(move.from) == .fa and this.squares[move.from] == .black_rook) {
+                this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.black_queenside)));
+            } else if (File.of(move.from) == .fh and this.squares[move.from] == .black_rook) {
+                this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.black_kingside)));
+            }
+        }
+        if (this.squares[move.from] == .white_king) {
+            this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.white_kingside)) ^ (1 << @intFromEnum(Castle.white_queenside)));
+        } else if (this.squares[move.from] == .black_king) {
+            this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.black_kingside)) ^ (1 << @intFromEnum(Castle.black_queenside)));
+        }
+
         if (move.en_passant_capture) {
             this.squares[move.to] = this.squares[move.from];
             this.squares[move.from] = .empty;
@@ -254,6 +273,34 @@ pub const Board = struct {
             }
 
             this.fifty_move = 0;
+        } else if (move.castle != .none) {
+            switch (move.castle) {
+                .none => assert(false),
+                .white_kingside => {
+                    this.squares[4] = .empty;
+                    this.squares[5] = .white_rook;
+                    this.squares[6] = .white_king;
+                    this.squares[7] = .empty;
+                },
+                .white_queenside => {
+                    this.squares[4] = .empty;
+                    this.squares[3] = .white_rook;
+                    this.squares[2] = .white_king;
+                    this.squares[0] = .empty;
+                },
+                .black_kingside => {
+                    this.squares[60] = .empty;
+                    this.squares[61] = .black_rook;
+                    this.squares[62] = .black_king;
+                    this.squares[63] = .empty;
+                },
+                .black_queenside => {
+                    this.squares[60] = .empty;
+                    this.squares[59] = .black_rook;
+                    this.squares[58] = .black_king;
+                    this.squares[56] = .empty;
+                },
+            }
         } else {
             this.fifty_move = switch (move.promoted != .empty or move.captured != .empty or
                 this.squares[move.from] == .white_pawn or this.squares[move.from] == .black_pawn) {
@@ -275,10 +322,10 @@ pub const Board = struct {
         };
         // This is 0 in case en passant is not possible
         this.en_passant = move.en_passant_square;
-        // this.castle = move.castle_perm;
     }
     pub fn undo_move(this: *@This(), move: Move) void {
         assert(this.squares[move.from] == .empty);
+
         if (move.en_passant_capture) {
             if (this.side_to_move == .black) {
                 this.squares[move.from] = .white_pawn;
@@ -288,6 +335,34 @@ pub const Board = struct {
                 this.squares[move.from] = .black_pawn;
                 this.squares[move.to] = .empty;
                 this.squares[move.to + 8] = .white_pawn;
+            }
+        } else if (move.castle != .none) {
+            switch (move.castle) {
+                .none => assert(false),
+                .white_kingside => {
+                    this.squares[4] = .white_king;
+                    this.squares[5] = .empty;
+                    this.squares[6] = .empty;
+                    this.squares[7] = .white_rook;
+                },
+                .white_queenside => {
+                    this.squares[4] = .white_king;
+                    this.squares[3] = .empty;
+                    this.squares[2] = .empty;
+                    this.squares[0] = .white_rook;
+                },
+                .black_kingside => {
+                    this.squares[60] = .black_king;
+                    this.squares[61] = .empty;
+                    this.squares[62] = .empty;
+                    this.squares[63] = .black_rook;
+                },
+                .black_queenside => {
+                    this.squares[60] = .black_king;
+                    this.squares[59] = .empty;
+                    this.squares[58] = .empty;
+                    this.squares[56] = .black_rook;
+                },
             }
         } else {
             if (move.promoted == .empty) {
@@ -305,7 +380,7 @@ pub const Board = struct {
             .black => .white,
         };
         this.en_passant = move.en_passant_square_past;
-        // this.castle = move.castle_perm_past;
+        this.castle = move.castle_perm_past;
         this.fifty_move = move.fifty_move_past;
     }
     pub fn copy_to(this: *const @This(), target: *Board) void {

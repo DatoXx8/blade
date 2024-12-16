@@ -69,6 +69,8 @@ fn simulate_moves(starting: *Board, board: *Board, comptime move_num: u32, rng: 
         .captured = .empty,
         .promoted = .empty,
         .fifty_move_past = 0,
+        .castle = .none,
+        .castle_perm_past = 0,
     };
 
     var movelist_saved: [move_num]Move = [1]Move{move_empty} ** move_num;
