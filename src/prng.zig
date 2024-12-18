@@ -6,7 +6,7 @@ const incr: u64 = 1442695040888963407;
 
 /// This implementation was tested using PractRand [https://www.pcg-random.org/posts/how-to-test-with-practrand.html] up to 1 TB and it found no statistical anomalies.
 pub const Pcg = struct {
-    fn rotate_32(x: u32, pivot: u5) u32 {
+    fn rotate32(x: u32, pivot: u5) u32 {
         return x >> pivot | x << ((-%pivot) & 31);
     }
     pub fn init(x: u64) void {
@@ -18,9 +18,9 @@ pub const Pcg = struct {
 
         state = state *% mult +% incr;
         x ^= x >> 18;
-        return Pcg.rotate_32(@truncate(x >> 27), pivot);
+        return Pcg.rotate32(@truncate(x >> 27), pivot);
     }
-    pub fn rand_below(top: u32) u32 {
+    pub fn randBelow(top: u32) u32 {
         if (top == 0 or top == 1) {
             return 0;
         }

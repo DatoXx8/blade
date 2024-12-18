@@ -83,7 +83,7 @@ pub const Movelist = struct {
         if (board.side_to_move == .white) {
             if (@as(u1, @truncate(board.castle >> @intFromEnum(Castle.white_kingside))) == 1 and
                 board.squares[5] == .empty and board.squares[6] == .empty and board.squares[7] == .white_rook and
-                !board.is_square_attacked(5, .white) and !board.is_square_attacked(6, .white))
+                !board.isSquareAttacked(5, .white) and !board.isSquareAttacked(6, .white))
             {
                 temporary.add(.{
                     .to = 6,
@@ -100,8 +100,8 @@ pub const Movelist = struct {
             }
             if (@as(u1, @truncate(board.castle >> @intFromEnum(Castle.white_queenside))) == 1 and board.squares[0] == .white_rook and
                 board.squares[1] == .empty and board.squares[2] == .empty and
-                board.squares[3] == .empty and !board.is_square_attacked(1, .white) and
-                !board.is_square_attacked(2, .white) and !board.is_square_attacked(3, .white))
+                board.squares[3] == .empty and !board.isSquareAttacked(1, .white) and
+                !board.isSquareAttacked(2, .white) and !board.isSquareAttacked(3, .white))
             {
                 temporary.add(.{
                     .to = 2,
@@ -120,7 +120,7 @@ pub const Movelist = struct {
             for (0..square_count) |square_idx_size| {
                 // TODO: Refactor this usize and u8 bs
                 const square_idx: u8 = @truncate(square_idx_size);
-                if (board.squares[square_idx].is_black() or board.squares[square_idx] == .empty) {
+                if (board.squares[square_idx].isBlack() or board.squares[square_idx] == .empty) {
                     continue;
                 }
 
@@ -177,7 +177,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (File.of(square_idx) != .fa and board.squares[square_idx + 7].is_black()) {
+                            if (File.of(square_idx) != .fa and board.squares[square_idx + 7].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 7,
                                     .from = square_idx,
@@ -227,7 +227,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (File.of(square_idx) != .fh and board.squares[square_idx + 9].is_black()) {
+                            if (File.of(square_idx) != .fh and board.squares[square_idx + 9].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 9,
                                     .from = square_idx,
@@ -306,7 +306,7 @@ pub const Movelist = struct {
                                     });
                                 }
                             }
-                            if (File.of(square_idx) != .fa and board.squares[square_idx + 7].is_black()) {
+                            if (File.of(square_idx) != .fa and board.squares[square_idx + 7].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 7,
                                     .from = square_idx,
@@ -335,7 +335,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (File.of(square_idx) != .fh and board.squares[square_idx + 9].is_black()) {
+                            if (File.of(square_idx) != .fh and board.squares[square_idx + 9].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 9,
                                     .from = square_idx,
@@ -368,7 +368,7 @@ pub const Movelist = struct {
                     },
                     .white_knight => {
                         if (File.of(square_idx) != .fa) {
-                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].is_white()) {
+                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 17,
                                     .from = square_idx,
@@ -382,7 +382,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].is_white()) {
+                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 15,
                                     .from = square_idx,
@@ -398,7 +398,7 @@ pub const Movelist = struct {
                             }
                         }
                         if (File.of(square_idx) != .fh) {
-                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].is_white()) {
+                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 15,
                                     .from = square_idx,
@@ -412,7 +412,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].is_white()) {
+                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 17,
                                     .from = square_idx,
@@ -428,7 +428,7 @@ pub const Movelist = struct {
                             }
                         }
                         if (File.of(square_idx) != .fb and File.of(square_idx) != .fa) {
-                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].is_white()) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 10,
                                     .from = square_idx,
@@ -442,7 +442,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].is_white()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 6,
                                     .from = square_idx,
@@ -458,7 +458,7 @@ pub const Movelist = struct {
                             }
                         }
                         if (File.of(square_idx) != .fg and File.of(square_idx) != .fh) {
-                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].is_white()) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 6,
                                     .from = square_idx,
@@ -472,7 +472,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].is_white()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 10,
                                     .from = square_idx,
@@ -507,7 +507,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 9 * diagonal_idx].is_black()) {
+                            } else if (board.squares[square_idx + 9 * diagonal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
@@ -543,7 +543,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 7 * diagonal_idx].is_black()) {
+                            } else if (board.squares[square_idx + 7 * diagonal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
@@ -579,7 +579,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 9 * diagonal_idx].is_black()) {
+                            } else if (board.squares[square_idx - 9 * diagonal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
@@ -615,7 +615,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 7 * diagonal_idx].is_black()) {
+                            } else if (board.squares[square_idx - 7 * diagonal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
@@ -653,7 +653,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + horizontal_idx].is_black()) {
+                            } else if (board.squares[square_idx + horizontal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
@@ -689,7 +689,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - horizontal_idx].is_black()) {
+                            } else if (board.squares[square_idx - horizontal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
@@ -725,7 +725,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 8 * vertical_idx].is_black()) {
+                            } else if (board.squares[square_idx + 8 * vertical_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
@@ -761,7 +761,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 8 * vertical_idx].is_black()) {
+                            } else if (board.squares[square_idx - 8 * vertical_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
@@ -799,7 +799,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + horizontal_idx].is_black()) {
+                            } else if (board.squares[square_idx + horizontal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
@@ -835,7 +835,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - horizontal_idx].is_black()) {
+                            } else if (board.squares[square_idx - horizontal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
@@ -871,7 +871,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 8 * vertical_idx].is_black()) {
+                            } else if (board.squares[square_idx + 8 * vertical_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
@@ -907,7 +907,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 8 * vertical_idx].is_black()) {
+                            } else if (board.squares[square_idx - 8 * vertical_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
@@ -943,7 +943,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 9 * diagonal_idx].is_black()) {
+                            } else if (board.squares[square_idx + 9 * diagonal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
@@ -979,7 +979,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 7 * diagonal_idx].is_black()) {
+                            } else if (board.squares[square_idx + 7 * diagonal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
@@ -1015,7 +1015,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 9 * diagonal_idx].is_black()) {
+                            } else if (board.squares[square_idx - 9 * diagonal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
@@ -1051,7 +1051,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 7 * diagonal_idx].is_black()) {
+                            } else if (board.squares[square_idx - 7 * diagonal_idx].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
@@ -1071,7 +1071,7 @@ pub const Movelist = struct {
                         }
                     },
                     .white_king => {
-                        if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 8].is_white()) {
+                        if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 8].isWhite()) {
                             temporary.add(.{
                                 .to = square_idx - 8,
                                 .from = square_idx,
@@ -1085,7 +1085,7 @@ pub const Movelist = struct {
                                 .castle_perm_past = board.castle,
                             });
                         }
-                        if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].is_white()) {
+                        if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].isWhite()) {
                             temporary.add(.{
                                 .to = square_idx + 8,
                                 .from = square_idx,
@@ -1100,7 +1100,7 @@ pub const Movelist = struct {
                             });
                         }
                         if (File.of(square_idx) != .fa) {
-                            if (!board.squares[square_idx - 1].is_white()) {
+                            if (!board.squares[square_idx - 1].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 1,
                                     .from = square_idx,
@@ -1114,7 +1114,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].is_white()) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 9,
                                     .from = square_idx,
@@ -1128,7 +1128,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].is_white()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 7,
                                     .from = square_idx,
@@ -1144,7 +1144,7 @@ pub const Movelist = struct {
                             }
                         }
                         if (File.of(square_idx) != .fh) {
-                            if (!board.squares[square_idx + 1].is_white()) {
+                            if (!board.squares[square_idx + 1].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 1,
                                     .from = square_idx,
@@ -1158,7 +1158,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].is_white()) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 7,
                                     .from = square_idx,
@@ -1172,7 +1172,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].is_white()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 9,
                                     .from = square_idx,
@@ -1194,7 +1194,7 @@ pub const Movelist = struct {
         } else {
             if (@as(u1, @truncate(board.castle >> @intFromEnum(Castle.black_kingside))) == 1 and
                 board.squares[61] == .empty and board.squares[62] == .empty and board.squares[63] == .black_rook and
-                !board.is_square_attacked(61, .black) and !board.is_square_attacked(62, .black))
+                !board.isSquareAttacked(61, .black) and !board.isSquareAttacked(62, .black))
             {
                 temporary.add(.{
                     .to = 62,
@@ -1211,8 +1211,8 @@ pub const Movelist = struct {
             }
             if (@as(u1, @truncate(board.castle >> @intFromEnum(Castle.black_queenside))) == 1 and board.squares[60] == .black_rook and
                 board.squares[57] == .empty and board.squares[58] == .empty and
-                board.squares[59] == .empty and !board.is_square_attacked(57, .black) and
-                !board.is_square_attacked(58, .black) and !board.is_square_attacked(59, .black))
+                board.squares[59] == .empty and !board.isSquareAttacked(57, .black) and
+                !board.isSquareAttacked(58, .black) and !board.isSquareAttacked(59, .black))
             {
                 temporary.add(.{
                     .to = 58,
@@ -1231,7 +1231,7 @@ pub const Movelist = struct {
             for (0..square_count) |square_idx_size| {
                 // TODO: Refactor this usize and u8 bs
                 const square_idx: u8 = @truncate(square_idx_size);
-                if (board.squares[square_idx].is_white() or board.squares[square_idx] == .empty) {
+                if (board.squares[square_idx].isWhite() or board.squares[square_idx] == .empty) {
                     continue;
                 }
 
@@ -1288,7 +1288,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (File.of(square_idx) != .fa and board.squares[square_idx - 9].is_white()) {
+                            if (File.of(square_idx) != .fa and board.squares[square_idx - 9].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 9,
                                     .from = square_idx,
@@ -1338,7 +1338,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (File.of(square_idx) != .fh and board.squares[square_idx - 7].is_white()) {
+                            if (File.of(square_idx) != .fh and board.squares[square_idx - 7].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 7,
                                     .from = square_idx,
@@ -1417,7 +1417,7 @@ pub const Movelist = struct {
                                     });
                                 }
                             }
-                            if (File.of(square_idx) != .fa and board.squares[square_idx - 9].is_white()) {
+                            if (File.of(square_idx) != .fa and board.squares[square_idx - 9].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 9,
                                     .from = square_idx,
@@ -1446,7 +1446,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (File.of(square_idx) != .fh and board.squares[square_idx - 7].is_white()) {
+                            if (File.of(square_idx) != .fh and board.squares[square_idx - 7].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 7,
                                     .from = square_idx,
@@ -1479,7 +1479,7 @@ pub const Movelist = struct {
                     },
                     .black_knight => {
                         if (File.of(square_idx) != .fa) {
-                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].is_black()) {
+                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 17,
                                     .from = square_idx,
@@ -1493,7 +1493,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].is_black()) {
+                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 15,
                                     .from = square_idx,
@@ -1509,7 +1509,7 @@ pub const Movelist = struct {
                             }
                         }
                         if (File.of(square_idx) != .fh) {
-                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].is_black()) {
+                            if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 15,
                                     .from = square_idx,
@@ -1523,7 +1523,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].is_black()) {
+                            if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 17,
                                     .from = square_idx,
@@ -1539,7 +1539,7 @@ pub const Movelist = struct {
                             }
                         }
                         if (File.of(square_idx) != .fb and File.of(square_idx) != .fa) {
-                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].is_black()) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 10,
                                     .from = square_idx,
@@ -1553,7 +1553,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].is_black()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 6,
                                     .from = square_idx,
@@ -1569,7 +1569,7 @@ pub const Movelist = struct {
                             }
                         }
                         if (File.of(square_idx) != .fg and File.of(square_idx) != .fh) {
-                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].is_black()) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 6,
                                     .from = square_idx,
@@ -1583,7 +1583,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].is_black()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 10,
                                     .from = square_idx,
@@ -1618,7 +1618,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 9 * diagonal_idx].is_white()) {
+                            } else if (board.squares[square_idx + 9 * diagonal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
@@ -1654,7 +1654,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 7 * diagonal_idx].is_white()) {
+                            } else if (board.squares[square_idx + 7 * diagonal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
@@ -1690,7 +1690,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 9 * diagonal_idx].is_white()) {
+                            } else if (board.squares[square_idx - 9 * diagonal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
@@ -1726,7 +1726,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 7 * diagonal_idx].is_white()) {
+                            } else if (board.squares[square_idx - 7 * diagonal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
@@ -1764,7 +1764,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + horizontal_idx].is_white()) {
+                            } else if (board.squares[square_idx + horizontal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
@@ -1800,7 +1800,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - horizontal_idx].is_white()) {
+                            } else if (board.squares[square_idx - horizontal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
@@ -1836,7 +1836,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 8 * vertical_idx].is_white()) {
+                            } else if (board.squares[square_idx + 8 * vertical_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
@@ -1872,7 +1872,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 8 * vertical_idx].is_white()) {
+                            } else if (board.squares[square_idx - 8 * vertical_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
@@ -1910,7 +1910,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + horizontal_idx].is_white()) {
+                            } else if (board.squares[square_idx + horizontal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + horizontal_idx,
                                     .from = square_idx,
@@ -1946,7 +1946,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - horizontal_idx].is_white()) {
+                            } else if (board.squares[square_idx - horizontal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - horizontal_idx,
                                     .from = square_idx,
@@ -1982,7 +1982,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 8 * vertical_idx].is_white()) {
+                            } else if (board.squares[square_idx + 8 * vertical_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 8 * vertical_idx,
                                     .from = square_idx,
@@ -2018,7 +2018,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 8 * vertical_idx].is_white()) {
+                            } else if (board.squares[square_idx - 8 * vertical_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 8 * vertical_idx,
                                     .from = square_idx,
@@ -2054,7 +2054,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 9 * diagonal_idx].is_white()) {
+                            } else if (board.squares[square_idx + 9 * diagonal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 9 * diagonal_idx,
                                     .from = square_idx,
@@ -2090,7 +2090,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx + 7 * diagonal_idx].is_white()) {
+                            } else if (board.squares[square_idx + 7 * diagonal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx + 7 * diagonal_idx,
                                     .from = square_idx,
@@ -2126,7 +2126,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 9 * diagonal_idx].is_white()) {
+                            } else if (board.squares[square_idx - 9 * diagonal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 9 * diagonal_idx,
                                     .from = square_idx,
@@ -2162,7 +2162,7 @@ pub const Movelist = struct {
                                     .castle = .none,
                                     .castle_perm_past = board.castle,
                                 });
-                            } else if (board.squares[square_idx - 7 * diagonal_idx].is_white()) {
+                            } else if (board.squares[square_idx - 7 * diagonal_idx].isWhite()) {
                                 temporary.add(.{
                                     .to = square_idx - 7 * diagonal_idx,
                                     .from = square_idx,
@@ -2182,7 +2182,7 @@ pub const Movelist = struct {
                         }
                     },
                     .black_king => {
-                        if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 8].is_black()) {
+                        if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 8].isBlack()) {
                             temporary.add(.{
                                 .to = square_idx - 8,
                                 .from = square_idx,
@@ -2196,7 +2196,7 @@ pub const Movelist = struct {
                                 .castle_perm_past = board.castle,
                             });
                         }
-                        if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].is_black()) {
+                        if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].isBlack()) {
                             temporary.add(.{
                                 .to = square_idx + 8,
                                 .from = square_idx,
@@ -2211,7 +2211,7 @@ pub const Movelist = struct {
                             });
                         }
                         if (File.of(square_idx) != .fa) {
-                            if (!board.squares[square_idx - 1].is_black()) {
+                            if (!board.squares[square_idx - 1].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 1,
                                     .from = square_idx,
@@ -2225,7 +2225,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].is_black()) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 9,
                                     .from = square_idx,
@@ -2239,7 +2239,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].is_black()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 7,
                                     .from = square_idx,
@@ -2255,7 +2255,7 @@ pub const Movelist = struct {
                             }
                         }
                         if (File.of(square_idx) != .fh) {
-                            if (!board.squares[square_idx + 1].is_black()) {
+                            if (!board.squares[square_idx + 1].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 1,
                                     .from = square_idx,
@@ -2269,7 +2269,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].is_black()) {
+                            if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx - 7,
                                     .from = square_idx,
@@ -2283,7 +2283,7 @@ pub const Movelist = struct {
                                     .castle_perm_past = board.castle,
                                 });
                             }
-                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].is_black()) {
+                            if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].isBlack()) {
                                 temporary.add(.{
                                     .to = square_idx + 9,
                                     .from = square_idx,
@@ -2307,13 +2307,13 @@ pub const Movelist = struct {
         for (0..temporary.move_count) |move_idx| {
             const color_check: Color = board.side_to_move;
 
-            board.make_move(temporary.move[move_idx]);
+            board.makeMove(temporary.move[move_idx]);
 
-            if (!board.is_check(color_check)) {
+            if (!board.isCheck(color_check)) {
                 this.add(temporary.move[move_idx]);
             }
 
-            board.undo_move(temporary.move[move_idx]);
+            board.undoMove(temporary.move[move_idx]);
         }
     }
     pub fn init() Movelist {

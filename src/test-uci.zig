@@ -12,11 +12,11 @@ const Uci = @import("./uci.zig").Uci;
 const Pcg = @import("./prng.zig").Pcg;
 
 /// Ensure that playing random moves and then undoing them results in the starting position
-fn simulate_uci(board: *Board, comptime move_num: u32, rng: u64) void {
+fn simulateUci(board: *Board, comptime move_num: u32, rng: u64) void {
     std.debug.print("rng={}", .{rng});
 
     Pcg.init(rng);
-    board.read_fen(fen_start);
+    board.readFen(fen_start);
     var movelist: Movelist = Movelist.init();
 
     for (0..move_num) |_| {
@@ -48,8 +48,8 @@ fn simulate_uci(board: *Board, comptime move_num: u32, rng: u64) void {
             assert(decoded.castle_perm_past == expected.castle_perm_past);
         }
 
-        const move_idx: u32 = Pcg.rand_below(movelist.move_count);
-        board.make_move(movelist.move[move_idx]);
+        const move_idx: u32 = Pcg.randBelow(movelist.move_count);
+        board.makeMove(movelist.move[move_idx]);
     }
 
     std.debug.print(" passed\n", .{});
@@ -102,13 +102,13 @@ pub fn main() !void {
         // when running multiple threads with this because you then run the same tests over and over again
         while (true) {
             std.debug.print("[{}] => ", .{loop_idx});
-            simulate_uci(&board, move_num, rng + loop_idx);
+            simulateUci(&board, move_num, rng + loop_idx);
             loop_idx += 1;
         }
     } else {
         for (0..loop_count) |loop_idx| {
             std.debug.print("[{}] => ", .{loop_idx});
-            simulate_uci(&board, move_num, rng + loop_idx);
+            simulateUci(&board, move_num, rng + loop_idx);
         }
     }
 }

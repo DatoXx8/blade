@@ -11,11 +11,11 @@ const Move = @import("./move.zig").Move;
 const Pcg = @import("./prng.zig").Pcg;
 
 /// Ensure that playing random moves and then undoing them results in the starting position
-fn simulate_moves(starting: *Board, board: *Board, comptime move_num: u32, rng: u64) void {
+fn simulateMoves(starting: *Board, board: *Board, comptime move_num: u32, rng: u64) void {
     std.debug.print("rng={}", .{rng});
     Pcg.init(rng);
     var movelist: Movelist = Movelist.init();
-    starting.copy_to(board);
+    starting.copyTo(board);
 
     const move_empty: Move = .{
         .from = 0,
@@ -40,15 +40,15 @@ fn simulate_moves(starting: *Board, board: *Board, comptime move_num: u32, rng: 
             break;
         }
 
-        const move_idx: u32 = Pcg.rand_below(movelist.move_count);
+        const move_idx: u32 = Pcg.randBelow(movelist.move_count);
         movelist_saved[movelist_idx] = movelist.move[move_idx];
 
-        board.make_move(movelist.move[move_idx]);
+        board.makeMove(movelist.move[move_idx]);
 
         move_played = movelist_idx + 1;
     }
     for (0..move_played) |movelist_idx| {
-        board.undo_move(movelist_saved[move_played - (movelist_idx + 1)]);
+        board.undoMove(movelist_saved[move_played - (movelist_idx + 1)]);
     }
 
     assert(starting.castle == board.castle);
@@ -109,13 +109,13 @@ pub fn main() !void {
         // when running multiple threads with this because you then run the same tests over and over again
         while (true) {
             std.debug.print("[{}] => ", .{loop_idx});
-            simulate_moves(&starting, &board, move_num, rng + loop_idx);
+            simulateMoves(&starting, &board, move_num, rng + loop_idx);
             loop_idx += 1;
         }
     } else {
         for (0..loop_count) |loop_idx| {
             std.debug.print("[{}] => ", .{loop_idx});
-            simulate_moves(&starting, &board, move_num, rng + loop_idx);
+            simulateMoves(&starting, &board, move_num, rng + loop_idx);
         }
     }
 }

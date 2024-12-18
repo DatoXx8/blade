@@ -28,26 +28,26 @@ pub const Piece = enum(u4) {
     black_rook,
     black_queen,
     black_king,
-    pub fn is_white(this: @This()) bool {
+    pub fn isWhite(this: @This()) bool {
         return this == .white_pawn or this == .white_knight or
             this == .white_bishop or this == .white_rook or
             this == .white_queen or this == .white_king;
     }
-    pub fn is_black(this: @This()) bool {
+    pub fn isBlack(this: @This()) bool {
         return this == .black_pawn or this == .black_knight or
             this == .black_bishop or this == .black_rook or
             this == .black_queen or this == .black_king;
     }
-    pub fn is_white_diagonal(this: @This()) bool {
+    pub fn isWhiteDiagonal(this: @This()) bool {
         return this == .white_bishop or this == .white_queen;
     }
-    pub fn is_black_diagonal(this: @This()) bool {
+    pub fn isBlackDiagonal(this: @This()) bool {
         return this == .black_bishop or this == .black_queen;
     }
-    pub fn is_white_slide(this: @This()) bool {
+    pub fn isWhiteSlide(this: @This()) bool {
         return this == .white_rook or this == .white_queen;
     }
-    pub fn is_black_slide(this: @This()) bool {
+    pub fn isBlackSlide(this: @This()) bool {
         return this == .black_rook or this == .black_queen;
     }
 };
@@ -106,13 +106,13 @@ pub const Board = struct {
             .side_to_move = .white,
         };
         if (fen) |f| {
-            board.read_fen(f);
+            board.readFen(f);
         } else {
-            board.read_fen(fen_start);
+            board.readFen(fen_start);
         }
         return board;
     }
-    pub fn read_fen(this: *@This(), fen: []const u8) void {
+    pub fn readFen(this: *@This(), fen: []const u8) void {
         var offset: usize = 0;
         // At most 1 letter per square + 7 '/' charachters
         const piece_info_char_max: usize = 71;
@@ -238,7 +238,7 @@ pub const Board = struct {
             this.fifty_move += fen[char_idx] - '0';
         }
     }
-    pub fn make_move(this: *@This(), move: Move) void {
+    pub fn makeMove(this: *@This(), move: Move) void {
         // Less than 101 because of a kinda stupid way the move generation works
         assert(this.fifty_move < 101);
         assert(this.squares[move.to] == move.captured);
@@ -323,7 +323,7 @@ pub const Board = struct {
         // This is 0 in case en passant is not possible
         this.en_passant = move.en_passant_square;
     }
-    pub fn undo_move(this: *@This(), move: Move) void {
+    pub fn undoMove(this: *@This(), move: Move) void {
         assert(this.squares[move.from] == .empty);
 
         if (move.en_passant_capture) {
@@ -383,7 +383,7 @@ pub const Board = struct {
         this.castle = move.castle_perm_past;
         this.fifty_move = move.fifty_move_past;
     }
-    pub fn copy_to(this: *const @This(), target: *Board) void {
+    pub fn copyTo(this: *const @This(), target: *Board) void {
         target.castle = this.castle;
         target.en_passant = this.en_passant;
         target.side_to_move = this.side_to_move;
@@ -393,7 +393,7 @@ pub const Board = struct {
         }
     }
     /// Check if the square it index `square_idx` is attacked by a piece of opposite color to `color`
-    pub fn is_square_attacked(this: *const @This(), square_idx: u8, color: Color) bool {
+    pub fn isSquareAttacked(this: *const @This(), square_idx: u8, color: Color) bool {
         assert(square_idx < 64);
 
         if (color == .white) {
@@ -474,7 +474,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx + 7 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx + 7 * diagonal_idx].is_black_diagonal()) {
+                } else if (this.squares[square_idx + 7 * diagonal_idx].isBlackDiagonal()) {
                     return true;
                 } else {
                     break;
@@ -487,7 +487,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx + 9 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx + 9 * diagonal_idx].is_black_diagonal()) {
+                } else if (this.squares[square_idx + 9 * diagonal_idx].isBlackDiagonal()) {
                     return true;
                 } else {
                     break;
@@ -500,7 +500,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx - 7 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx - 7 * diagonal_idx].is_black_diagonal()) {
+                } else if (this.squares[square_idx - 7 * diagonal_idx].isBlackDiagonal()) {
                     return true;
                 } else {
                     break;
@@ -513,7 +513,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx - 9 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx - 9 * diagonal_idx].is_black_diagonal()) {
+                } else if (this.squares[square_idx - 9 * diagonal_idx].isBlackDiagonal()) {
                     return true;
                 } else {
                     break;
@@ -526,7 +526,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx + 8 * vertical_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx + 8 * vertical_idx].is_black_slide()) {
+                } else if (this.squares[square_idx + 8 * vertical_idx].isBlackSlide()) {
                     return true;
                 } else {
                     break;
@@ -539,7 +539,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx - 8 * vertical_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx - 8 * vertical_idx].is_black_slide()) {
+                } else if (this.squares[square_idx - 8 * vertical_idx].isBlackSlide()) {
                     return true;
                 } else {
                     break;
@@ -552,7 +552,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx + horizontal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx + horizontal_idx].is_black_slide()) {
+                } else if (this.squares[square_idx + horizontal_idx].isBlackSlide()) {
                     return true;
                 } else {
                     break;
@@ -565,7 +565,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx - horizontal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx - horizontal_idx].is_black_slide()) {
+                } else if (this.squares[square_idx - horizontal_idx].isBlackSlide()) {
                     return true;
                 } else {
                     break;
@@ -649,7 +649,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx + 7 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx + 7 * diagonal_idx].is_white_diagonal()) {
+                } else if (this.squares[square_idx + 7 * diagonal_idx].isWhiteDiagonal()) {
                     return true;
                 } else {
                     break;
@@ -662,7 +662,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx + 9 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx + 9 * diagonal_idx].is_white_diagonal()) {
+                } else if (this.squares[square_idx + 9 * diagonal_idx].isWhiteDiagonal()) {
                     return true;
                 } else {
                     break;
@@ -675,7 +675,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx - 7 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx - 7 * diagonal_idx].is_white_diagonal()) {
+                } else if (this.squares[square_idx - 7 * diagonal_idx].isWhiteDiagonal()) {
                     return true;
                 } else {
                     break;
@@ -688,7 +688,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx - 9 * diagonal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx - 9 * diagonal_idx].is_white_diagonal()) {
+                } else if (this.squares[square_idx - 9 * diagonal_idx].isWhiteDiagonal()) {
                     return true;
                 } else {
                     break;
@@ -701,7 +701,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx + 8 * vertical_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx + 8 * vertical_idx].is_white_slide()) {
+                } else if (this.squares[square_idx + 8 * vertical_idx].isWhiteSlide()) {
                     return true;
                 } else {
                     break;
@@ -714,7 +714,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx - 8 * vertical_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx - 8 * vertical_idx].is_white_slide()) {
+                } else if (this.squares[square_idx - 8 * vertical_idx].isWhiteSlide()) {
                     return true;
                 } else {
                     break;
@@ -727,7 +727,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx + horizontal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx + horizontal_idx].is_white_slide()) {
+                } else if (this.squares[square_idx + horizontal_idx].isWhiteSlide()) {
                     return true;
                 } else {
                     break;
@@ -740,7 +740,7 @@ pub const Board = struct {
                 }
                 if (this.squares[square_idx - horizontal_idx] == .empty) {
                     continue;
-                } else if (this.squares[square_idx - horizontal_idx].is_white_slide()) {
+                } else if (this.squares[square_idx - horizontal_idx].isWhiteSlide()) {
                     return true;
                 } else {
                     break;
@@ -750,7 +750,7 @@ pub const Board = struct {
         return false;
     }
     /// Check if the player `color` is in check
-    pub fn is_check(this: *const @This(), color: Color) bool {
+    pub fn isCheck(this: *const @This(), color: Color) bool {
         const king_target: Piece = switch (color) {
             .white => .white_king,
             .black => .black_king,
@@ -764,7 +764,7 @@ pub const Board = struct {
         }
         assert(square_king < 64);
 
-        return this.is_square_attacked(square_king, color);
+        return this.isSquareAttacked(square_king, color);
     }
     pub fn print(this: *const @This()) void {
         // Print this way to have a1 be the bottom left square with index 0
@@ -803,7 +803,7 @@ pub const Board = struct {
     }
     pub fn result(this: *const @This(), movelist: *const Movelist) Result {
         if (movelist.move_count == 0) {
-            if (this.is_check(this.side_to_move)) {
+            if (this.isCheck(this.side_to_move)) {
                 return switch (this.side_to_move) {
                     .white => .white,
                     .black => .black,
