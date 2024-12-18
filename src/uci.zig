@@ -13,56 +13,63 @@ const stdin = std.io.getStdIn().reader();
 const stdout = std.io.getStdOut().writer();
 
 pub const Uci = struct {
-    fn encode(from: u8, to: u8) [4]u8 {
-        return [4]u8{
-            switch (File.of(from)) {
-                .fa => 'a',
-                .fb => 'b',
-                .fc => 'c',
-                .fd => 'd',
-                .fe => 'e',
-                .ff => 'f',
-                .fg => 'g',
-                .fh => 'h',
-            },
-            switch (Rank.of(from)) {
-                .r1 => '1',
-                .r2 => '2',
-                .r3 => '3',
-                .r4 => '4',
-                .r5 => '5',
-                .r6 => '6',
-                .r7 => '7',
-                .r8 => '8',
-            },
-            switch (File.of(to)) {
-                .fa => 'a',
-                .fb => 'b',
-                .fc => 'c',
-                .fd => 'd',
-                .fe => 'e',
-                .ff => 'f',
-                .fg => 'g',
-                .fh => 'h',
-            },
-            switch (Rank.of(to)) {
-                .r1 => '1',
-                .r2 => '2',
-                .r3 => '3',
-                .r4 => '4',
-                .r5 => '5',
-                .r6 => '6',
-                .r7 => '7',
-                .r8 => '8',
-            },
-        };
+    // TODO: Maybe pass by reference
+    pub fn encode(move: Move) [5]u8 {
+        return [5]u8{ switch (File.of(move.from)) {
+            .fa => 'a',
+            .fb => 'b',
+            .fc => 'c',
+            .fd => 'd',
+            .fe => 'e',
+            .ff => 'f',
+            .fg => 'g',
+            .fh => 'h',
+        }, switch (Rank.of(move.from)) {
+            .r1 => '1',
+            .r2 => '2',
+            .r3 => '3',
+            .r4 => '4',
+            .r5 => '5',
+            .r6 => '6',
+            .r7 => '7',
+            .r8 => '8',
+        }, switch (File.of(move.to)) {
+            .fa => 'a',
+            .fb => 'b',
+            .fc => 'c',
+            .fd => 'd',
+            .fe => 'e',
+            .ff => 'f',
+            .fg => 'g',
+            .fh => 'h',
+        }, switch (Rank.of(move.to)) {
+            .r1 => '1',
+            .r2 => '2',
+            .r3 => '3',
+            .r4 => '4',
+            .r5 => '5',
+            .r6 => '6',
+            .r7 => '7',
+            .r8 => '8',
+        }, switch (move.promoted) {
+            .white_knight => 'N',
+            .white_bishop => 'B',
+            .white_rook => 'R',
+            .white_queen => 'Q',
+            .black_knight => 'n',
+            .black_bishop => 'b',
+            .black_rook => 'r',
+            .black_queen => 'q',
+            else => '\x00',
+        } };
     }
+    // TODO: Maybe pass by reference
     pub fn write(move: Move) !void {
         // TODO: Maybe do `catch unreachable` here??
-        try stdout.print("{s}\n", .{encode(move.from, move.to)});
+        try stdout.print("{s}\n", .{encode(move)});
     }
     /// Split because this part is tested sepperately
-    fn parse(board: *const Board, buffer: [5]u8) Move {
+    pub fn parse(board: *const Board, buffer: [5]u8) Move {
         assert(buffer[0] >= 'a');
         assert(buffer[0] <= 'h');
         assert(buffer[1] >= '1');
