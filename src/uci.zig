@@ -99,7 +99,7 @@ pub const Uci = struct {
             .white => if (Rank.of(from) == .r2 and Rank.of(to) == .r4 and board.squares[from] == .white_pawn) from + 8 else 0,
             .black => if (Rank.of(from) == .r7 and Rank.of(to) == .r5 and board.squares[from] == .black_pawn) from - 8 else 0,
         };
-        const en_passant_capture: bool = board.en_passant == to and switch (board.side_to_move) {
+        const en_passant_capture: bool = board.en_passant == to and board.en_passant != 0 and switch (board.side_to_move) {
             .white => board.squares[from] == .white_pawn,
             .black => board.squares[from] == .black_pawn,
         };
