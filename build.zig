@@ -64,4 +64,19 @@ pub fn build(b: *std.Build) void {
     }
     const test_move_step = b.step("test-move", "Run the simulator for move ops");
     test_move_step.dependOn(&test_move.step);
+
+    const simulation_test_uci = b.addExecutable(.{
+        .name = "test-uci",
+        .root_source_file = b.path("src/test-uci.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    b.installArtifact(simulation_test_uci);
+    const test_uci = b.addRunArtifact(simulation_test_uci);
+    test_uci.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        test_uci.addArgs(args);
+    }
+    const test_uci_step = b.step("test-uci", "Run the simulator for uci encoding and decoding");
+    test_uci_step.dependOn(&test_uci.step);
 }
