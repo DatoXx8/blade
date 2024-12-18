@@ -136,10 +136,7 @@ pub fn main() !void {
             assert(false);
         }
     }
-    const rng: u64 = switch (rng_saved == null) {
-        true => @bitCast(std.time.microTimestamp()),
-        false => rng_saved.?,
-    };
+    const rng: u64 = if (rng_saved == null) @bitCast(std.time.microTimestamp()) else rng_saved.?;
 
     const move_num: u32 = 200;
     comptime {
