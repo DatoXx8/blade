@@ -31,10 +31,10 @@ fn simulate_uci(board: *Board, comptime move_num: u32, rng: u64) void {
             const expected: Move = movelist.move[move_idx];
             const encoded: [5]u8 = Uci.encode(expected);
             const decoded: Move = Uci.parse(board, encoded);
-            board.debug();
-            expected.print();
-            decoded.print();
-            std.debug.print("\n", .{});
+            // board.debug();
+            // expected.print();
+            // decoded.print();
+            // std.debug.print("\n", .{});
 
             assert(decoded.from == expected.from);
             assert(decoded.to == expected.to);
