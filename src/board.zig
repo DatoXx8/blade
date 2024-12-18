@@ -865,22 +865,10 @@ pub const Board = struct {
         } else {
             std.debug.print("Castle rights: {s}{s}{s}{s}\n", .{
                 // There has to be a significantly nicer way of doing this
-                switch (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.white_kingside))) == 1) {
-                    true => "K",
-                    false => "-",
-                },
-                switch (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.white_queenside))) == 1) {
-                    true => "Q",
-                    false => "-",
-                },
-                switch (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.black_kingside))) == 1) {
-                    true => "k",
-                    false => "-",
-                },
-                switch (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.black_queenside))) == 1) {
-                    true => "q",
-                    false => "-",
-                },
+                if (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.white_kingside))) == 1) "K" else "-",
+                if (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.white_queenside))) == 1) "Q" else "-",
+                if (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.black_kingside))) == 1) "k" else "-",
+                if (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.black_queenside))) == 1) "q" else "-",
             });
         }
     }
