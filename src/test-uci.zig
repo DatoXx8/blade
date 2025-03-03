@@ -1,9 +1,7 @@
 const std = @import("std");
-
-const assert = @import("./util.zig").assert;
+const assert = std.debug.assert;
 
 const Board = @import("./board.zig").Board;
-const fen_start = @import("./board.zig").fen_start;
 const Movelist = @import("./move.zig").Movelist;
 const Move = @import("./move.zig").Move;
 
@@ -16,36 +14,29 @@ fn simulateUci(board: *Board, comptime move_num: u32, rng: u64) void {
     std.debug.print("rng={}", .{rng});
 
     Pcg.init(rng);
-    board.readFen(fen_start);
-    var movelist: Movelist = Movelist.init();
+    board.readFen(Board.fen_start);
+    var movelist: Movelist = .{ .move = undefined, .move_count = 0 };
 
     for (0..move_num) |_| {
         movelist.clear();
         movelist.generate(board);
 
-        if (board.result(&movelist) != .none) {
+        if (board.result(movelist) != .none) {
             break;
         }
 
         for (0..movelist.move_count) |move_idx| {
             const expected: Move = movelist.move[move_idx];
-            const encoded: [5]u8 = Uci.encode(expected);
-            const decoded: Move = Uci.parse(board, encoded);
+            const encoded: [5]u8 = Uci.encode(expected, board.side_to_move);
+            const decoded: Move = Uci.parse(board.*, encoded);
             // board.debug();
             // expected.print();
             // decoded.print();
             // std.debug.print("\n", .{});
 
-            assert(decoded.from == expected.from);
-            assert(decoded.to == expected.to);
-            assert(decoded.en_passant_capture == expected.en_passant_capture);
-            assert(decoded.en_passant_square == expected.en_passant_square);
-            assert(decoded.en_passant_square_past == expected.en_passant_square_past);
-            assert(decoded.captured == expected.captured);
-            assert(decoded.promoted == expected.promoted);
-            assert(decoded.fifty_move_past == expected.fifty_move_past);
-            assert(decoded.castle == expected.castle);
-            assert(decoded.castle_perm_past == expected.castle_perm_past);
+            assert(decoded.fromSq() == expected.fromSq());
+            assert(decoded.toSq() == expected.toSq());
+            assert(decoded.flag() == expected.flag());
         }
 
         const move_idx: u32 = Pcg.randBelow(movelist.move_count);
@@ -94,7 +85,7 @@ pub fn main() !void {
         assert(move_num > 0);
     }
 
-    var board: Board = Board.alloc(fen_start);
+    var board: Board = Board.alloc(Board.fen_start);
     if (loop_infinite) {
         var loop_idx: u64 = 0;
         // TODO: Decide how to reseed the random number generator here...

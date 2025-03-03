@@ -1,73 +1,39 @@
+const std = @import("std");
+const assert = std.debug.assert;
+
 const Board = @import("./board.zig").Board;
 const File = @import("./board.zig").File;
 const Rank = @import("./board.zig").Rank;
 const Color = @import("./board.zig").Color;
 const Piece = @import("./board.zig").Piece;
 const Castle = @import("./board.zig").Castle;
-const square_count = @import("./board.zig").square_count;
-
-const assert = @import("./util.zig").assert;
 
 pub const Move = struct {
-    from: u8,
-    to: u8,
-    en_passant_capture: bool,
-    /// Kind of a misleading name, but this is the square on which en passant will be possible *after* this move.
-    en_passant_square: u8,
-    captured: Piece,
-    promoted: Piece,
-    castle: Castle,
-    // TODO: Figure out if there is a way to remove these
-    en_passant_square_past: u8,
-    fifty_move_past: u8,
-    castle_perm_past: u8,
-    pub fn print(this: *const @This()) void {
-        const std = @import("std");
-        std.debug.print("({d:2} to {d:2}, en_passant ({}, sq {d:2}, past {d:2}), captured {s}, promoted {s}, castle {s}, {})\n", .{
-            this.from,
-            this.to,
-            this.en_passant_capture,
-            this.en_passant_square,
-            this.en_passant_square_past,
-            switch (this.captured) {
-                .empty => "-",
-                .white_pawn => "P",
-                .white_knight => "N",
-                .white_bishop => "B",
-                .white_rook => "R",
-                .white_queen => "Q",
-                .white_king => "K",
-                .black_pawn => "p",
-                .black_knight => "n",
-                .black_bishop => "b",
-                .black_rook => "r",
-                .black_queen => "q",
-                .black_king => "k",
-            },
-            switch (this.promoted) {
-                .empty => "-",
-                .white_pawn => "P",
-                .white_knight => "N",
-                .white_bishop => "B",
-                .white_rook => "R",
-                .white_queen => "Q",
-                .white_king => "K",
-                .black_pawn => "p",
-                .black_knight => "n",
-                .black_bishop => "b",
-                .black_rook => "r",
-                .black_queen => "q",
-                .black_king => "k",
-            },
-            switch (this.castle) {
-                .none => "-",
-                .white_kingside => "K",
-                .white_queenside => "Q",
-                .black_kingside => "k",
-                .black_queenside => "q",
-            },
-            this.castle_perm_past,
-        });
+    pub const Flag = enum(u4) {
+        none,
+        castle_kingside,
+        castle_queenside,
+        promote_knight,
+        promote_bishop,
+        promote_rook,
+        promote_queen,
+        en_passant,
+    };
+    data: u16,
+    pub fn create(from: u8, to: u8, flags: Flag) Move {
+        return .{ .data = from + (to << 6) + (@as(u16, @intFromEnum(flags)) << 12) };
+    }
+    pub fn fromSq(this: @This()) u8 {
+        return @truncate(this.data & 0b111111);
+    }
+    pub fn toSq(this: @This()) u8 {
+        return @truncate(this.data & (0b111111 << 6) >> 6);
+    }
+    pub fn flag(this: @This()) Flag {
+        return @enumFromInt(this.data & (0b1111 << 12) >> 12);
+    }
+    pub fn print(this: @This()) void {
+        std.debug.print("({d:2} to {d:2}, flag {}\n", .{ this.fromSq(), this.toSq(), this.flag() });
     }
 };
 
@@ -79,45 +45,23 @@ pub const Movelist = struct {
     pub fn generate(this: *@This(), board: *Board) void {
         assert(this.move_count == 0);
 
-        var temporary: Movelist = Movelist.init();
         if (board.side_to_move == .white) {
-            if (@as(u1, @truncate(board.castle >> @intFromEnum(Castle.white_kingside))) == 1 and
+            if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.white_kingside))) == 1 and
                 board.squares[5] == .empty and board.squares[6] == .empty and board.squares[7] == .white_rook and
                 !board.isSquareAttacked(5, .white) and !board.isSquareAttacked(6, .white))
             {
-                temporary.add(.{
-                    .to = 6,
-                    .from = 4,
-                    .captured = .empty,
-                    .promoted = .empty,
-                    .en_passant_capture = false,
-                    .en_passant_square = 0,
-                    .en_passant_square_past = board.en_passant,
-                    .fifty_move_past = board.fifty_move,
-                    .castle_perm_past = board.castle,
-                    .castle = .white_kingside,
-                });
+                this.add(Move.create(4, 6, .castle_kingside));
             }
-            if (@as(u1, @truncate(board.castle >> @intFromEnum(Castle.white_queenside))) == 1 and board.squares[0] == .white_rook and
+            if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.white_queenside))) == 1 and
+                board.squares[0] == .white_rook and
                 board.squares[1] == .empty and board.squares[2] == .empty and
                 board.squares[3] == .empty and !board.isSquareAttacked(1, .white) and
                 !board.isSquareAttacked(2, .white) and !board.isSquareAttacked(3, .white))
             {
-                temporary.add(.{
-                    .to = 2,
-                    .from = 4,
-                    .captured = .empty,
-                    .promoted = .empty,
-                    .en_passant_capture = false,
-                    .en_passant_square = 0,
-                    .en_passant_square_past = board.en_passant,
-                    .fifty_move_past = board.fifty_move,
-                    .castle_perm_past = board.castle,
-                    .castle = .white_queenside,
-                });
+                this.add(Move.create(4, 2, .castle_queenside));
             }
 
-            for (0..square_count) |square_idx_size| {
+            for (0..Board.square_count) |square_idx_size| {
                 // TODO: Refactor this usize and u8 bs
                 const square_idx: u8 = @truncate(square_idx_size);
                 if (board.squares[square_idx].isBlack() or board.squares[square_idx] == .empty) {
@@ -128,363 +72,77 @@ pub const Movelist = struct {
                     .white_pawn => {
                         if (Rank.of(square_idx) == .r7) {
                             if (board.squares[square_idx + 8] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .white_queen,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle_perm_past = board.castle,
-                                    .castle = .none,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .white_rook,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .white_bishop,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .white_knight,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 8, .promote_queen));
+                                this.add(Move.create(square_idx, square_idx + 8, .promote_rook));
+                                this.add(Move.create(square_idx, square_idx + 8, .promote_knight));
+                                this.add(Move.create(square_idx, square_idx + 8, .promote_bishop));
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx + 7].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7],
-                                    .promoted = .white_queen,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7],
-                                    .promoted = .white_rook,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7],
-                                    .promoted = .white_bishop,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7],
-                                    .promoted = .white_knight,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7, .promote_queen));
+                                this.add(Move.create(square_idx, square_idx + 7, .promote_rook));
+                                this.add(Move.create(square_idx, square_idx + 7, .promote_knight));
+                                this.add(Move.create(square_idx, square_idx + 7, .promote_bishop));
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx + 9].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9],
-                                    .promoted = .white_queen,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9],
-                                    .promoted = .white_rook,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9],
-                                    .promoted = .white_bishop,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx + 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9],
-                                    .promoted = .white_knight,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9, .promote_queen));
+                                this.add(Move.create(square_idx, square_idx + 9, .promote_rook));
+                                this.add(Move.create(square_idx, square_idx + 9, .promote_knight));
+                                this.add(Move.create(square_idx, square_idx + 9, .promote_bishop));
                             }
                         } else {
                             if (board.squares[square_idx + 8] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 8, .none));
                                 if (Rank.of(square_idx) == .r2 and board.squares[square_idx + 16] == .empty) {
-                                    temporary.add(.{
-                                        .to = square_idx + 16,
-                                        .from = square_idx,
-                                        .captured = .empty,
-                                        .promoted = .empty,
-                                        .en_passant_capture = false,
-                                        .en_passant_square = square_idx + 8,
-                                        .en_passant_square_past = board.en_passant,
-                                        .fifty_move_past = board.fifty_move,
-                                        .castle = .none,
-                                        .castle_perm_past = board.castle,
-                                    });
+                                    this.add(Move.create(square_idx, square_idx + 16, .none));
                                 }
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx + 7].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7, .none));
                             }
                             // Could explicitly check that the pawn is on the 5th rank but that is unnecessary
-                            if (File.of(square_idx) != .fa and square_idx + 7 == board.en_passant) {
-                                temporary.add(.{
-                                    .to = square_idx + 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7],
-                                    .promoted = .empty,
-                                    .en_passant_capture = true,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                            if (File.of(square_idx) != .fa and square_idx + 7 == board.history[board.history_len - 1].en_passant_sq) {
+                                this.add(Move.create(square_idx, square_idx + 7, .en_passant));
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx + 9].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9, .none));
                             }
                             // Could explicitly check that the pawn is on the 5th rank but that is unnecessary
-                            if (File.of(square_idx) != .fh and square_idx + 9 == board.en_passant) {
-                                temporary.add(.{
-                                    .to = square_idx + 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9],
-                                    .promoted = .empty,
-                                    .en_passant_capture = true,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                            if (File.of(square_idx) != .fh and square_idx + 9 == board.history[board.history_len - 1].en_passant_sq) {
+                                this.add(Move.create(square_idx, square_idx + 9, .en_passant));
                             }
                         }
                     },
                     .white_knight => {
                         if (File.of(square_idx) != .fa) {
                             if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 17,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 17],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 17, .none));
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 15,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 15],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 15, .none));
                             }
                         }
                         if (File.of(square_idx) != .fh) {
                             if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 15,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 15],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 15, .none));
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 17,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 17],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 17, .none));
                             }
                         }
                         if (File.of(square_idx) != .fb and File.of(square_idx) != .fa) {
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 10,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 10],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 10, .none));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 6,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 6],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 6, .none));
                             }
                         }
                         if (File.of(square_idx) != .fg and File.of(square_idx) != .fh) {
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 6,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 6],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 6, .none));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 10,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 10],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 10, .none));
                             }
                         }
                     },
@@ -495,31 +153,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + 9 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9 * diagonal_idx, .none));
                             } else if (board.squares[square_idx + 9 * diagonal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -531,31 +167,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + 7 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7 * diagonal_idx, .none));
                             } else if (board.squares[square_idx + 7 * diagonal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -567,31 +181,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9 * diagonal_idx, .none));
                             } else if (board.squares[square_idx - 9 * diagonal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -603,31 +195,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7 * diagonal_idx, .none));
                             } else if (board.squares[square_idx - 7 * diagonal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -641,31 +211,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + horizontal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + horizontal_idx, .none));
                             } else if (board.squares[square_idx + horizontal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + horizontal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + horizontal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -677,31 +225,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - horizontal_idx, .none));
                             } else if (board.squares[square_idx - horizontal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - horizontal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - horizontal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -713,31 +239,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 8 * vertical_idx, .none));
                             } else if (board.squares[square_idx + 8 * vertical_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 8 * vertical_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 8 * vertical_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -749,31 +253,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 8 * vertical_idx, .none));
                             } else if (board.squares[square_idx - 8 * vertical_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 8 * vertical_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 8 * vertical_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -781,181 +263,15 @@ pub const Movelist = struct {
                         }
                     },
                     .white_queen => {
-                        for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
-                            if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
-                                break;
-                            }
-                            if (board.squares[square_idx + horizontal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                            } else if (board.squares[square_idx + horizontal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + horizontal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                break;
-                            } else {
-                                break;
-                            }
-                        }
-                        for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
-                            if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
-                                break;
-                            }
-                            if (board.squares[square_idx - horizontal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                            } else if (board.squares[square_idx - horizontal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - horizontal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                break;
-                            } else {
-                                break;
-                            }
-                        }
-                        for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
-                            if (square_idx + 8 * vertical_idx > 63) {
-                                break;
-                            }
-                            if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                            } else if (board.squares[square_idx + 8 * vertical_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 8 * vertical_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                break;
-                            } else {
-                                break;
-                            }
-                        }
-                        for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
-                            if (square_idx < 8 * vertical_idx) {
-                                break;
-                            }
-                            if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                            } else if (board.squares[square_idx - 8 * vertical_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 8 * vertical_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                break;
-                            } else {
-                                break;
-                            }
-                        }
                         for (0..8) |diagonal_idx_usize| {
                             const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 9 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9 * diagonal_idx, .none));
                             } else if (board.squares[square_idx + 9 * diagonal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -967,31 +283,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + 7 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7 * diagonal_idx, .none));
                             } else if (board.squares[square_idx + 7 * diagonal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1003,31 +297,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9 * diagonal_idx, .none));
                             } else if (board.squares[square_idx - 9 * diagonal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1039,31 +311,65 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7 * diagonal_idx, .none));
                             } else if (board.squares[square_idx - 7 * diagonal_idx].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7 * diagonal_idx, .none));
+                                break;
+                            } else {
+                                break;
+                            }
+                        }
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
+                            if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
+                                break;
+                            }
+                            if (board.squares[square_idx + horizontal_idx] == .empty) {
+                                this.add(Move.create(square_idx, square_idx + horizontal_idx, .none));
+                            } else if (board.squares[square_idx + horizontal_idx].isBlack()) {
+                                this.add(Move.create(square_idx, square_idx + horizontal_idx, .none));
+                                break;
+                            } else {
+                                break;
+                            }
+                        }
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
+                            if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
+                                break;
+                            }
+                            if (board.squares[square_idx - horizontal_idx] == .empty) {
+                                this.add(Move.create(square_idx, square_idx - horizontal_idx, .none));
+                            } else if (board.squares[square_idx - horizontal_idx].isBlack()) {
+                                this.add(Move.create(square_idx, square_idx - horizontal_idx, .none));
+                                break;
+                            } else {
+                                break;
+                            }
+                        }
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
+                            if (square_idx + 8 * vertical_idx > 63) {
+                                break;
+                            }
+                            if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
+                                this.add(Move.create(square_idx, square_idx + 8 * vertical_idx, .none));
+                            } else if (board.squares[square_idx + 8 * vertical_idx].isBlack()) {
+                                this.add(Move.create(square_idx, square_idx + 8 * vertical_idx, .none));
+                                break;
+                            } else {
+                                break;
+                            }
+                        }
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
+                            if (square_idx < 8 * vertical_idx) {
+                                break;
+                            }
+                            if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
+                                this.add(Move.create(square_idx, square_idx - 8 * vertical_idx, .none));
+                            } else if (board.squares[square_idx - 8 * vertical_idx].isBlack()) {
+                                this.add(Move.create(square_idx, square_idx - 8 * vertical_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1072,119 +378,31 @@ pub const Movelist = struct {
                     },
                     .white_king => {
                         if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 8].isWhite()) {
-                            temporary.add(.{
-                                .to = square_idx - 8,
-                                .from = square_idx,
-                                .captured = board.squares[square_idx - 8],
-                                .promoted = .empty,
-                                .en_passant_capture = false,
-                                .en_passant_square = 0,
-                                .en_passant_square_past = board.en_passant,
-                                .fifty_move_past = board.fifty_move,
-                                .castle = .none,
-                                .castle_perm_past = board.castle,
-                            });
+                            this.add(Move.create(square_idx, square_idx - 8, .none));
                         }
                         if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].isWhite()) {
-                            temporary.add(.{
-                                .to = square_idx + 8,
-                                .from = square_idx,
-                                .captured = board.squares[square_idx + 8],
-                                .promoted = .empty,
-                                .en_passant_capture = false,
-                                .en_passant_square = 0,
-                                .en_passant_square_past = board.en_passant,
-                                .fifty_move_past = board.fifty_move,
-                                .castle = .none,
-                                .castle_perm_past = board.castle,
-                            });
+                            this.add(Move.create(square_idx, square_idx + 8, .none));
                         }
                         if (File.of(square_idx) != .fa) {
                             if (!board.squares[square_idx - 1].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 1,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 1],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 1, .none));
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9, .none));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7, .none));
                             }
                         }
                         if (File.of(square_idx) != .fh) {
                             if (!board.squares[square_idx + 1].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 1,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 1],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 1, .none));
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7, .none));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9, .none));
                             }
                         }
                     },
@@ -1192,43 +410,21 @@ pub const Movelist = struct {
                 }
             }
         } else {
-            if (@as(u1, @truncate(board.castle >> @intFromEnum(Castle.black_kingside))) == 1 and
+            if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.black_kingside))) == 1 and
                 board.squares[61] == .empty and board.squares[62] == .empty and board.squares[63] == .black_rook and
                 !board.isSquareAttacked(61, .black) and !board.isSquareAttacked(62, .black))
             {
-                temporary.add(.{
-                    .to = 62,
-                    .from = 60,
-                    .captured = .empty,
-                    .promoted = .empty,
-                    .en_passant_capture = false,
-                    .en_passant_square = 0,
-                    .en_passant_square_past = board.en_passant,
-                    .fifty_move_past = board.fifty_move,
-                    .castle_perm_past = board.castle,
-                    .castle = .black_kingside,
-                });
+                this.add(Move.create(60, 62, .castle_kingside));
             }
-            if (@as(u1, @truncate(board.castle >> @intFromEnum(Castle.black_queenside))) == 1 and board.squares[60] == .black_rook and
+            if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.black_queenside))) == 1 and board.squares[60] == .black_rook and
                 board.squares[57] == .empty and board.squares[58] == .empty and
                 board.squares[59] == .empty and !board.isSquareAttacked(57, .black) and
                 !board.isSquareAttacked(58, .black) and !board.isSquareAttacked(59, .black))
             {
-                temporary.add(.{
-                    .to = 58,
-                    .from = 60,
-                    .captured = .empty,
-                    .promoted = .empty,
-                    .en_passant_capture = false,
-                    .en_passant_square = 0,
-                    .en_passant_square_past = board.en_passant,
-                    .fifty_move_past = board.fifty_move,
-                    .castle_perm_past = board.castle,
-                    .castle = .black_queenside,
-                });
+                this.add(Move.create(60, 58, .castle_queenside));
             }
 
-            for (0..square_count) |square_idx_size| {
+            for (0..Board.square_count) |square_idx_size| {
                 // TODO: Refactor this usize and u8 bs
                 const square_idx: u8 = @truncate(square_idx_size);
                 if (board.squares[square_idx].isWhite() or board.squares[square_idx] == .empty) {
@@ -1239,363 +435,77 @@ pub const Movelist = struct {
                     .black_pawn => {
                         if (Rank.of(square_idx) == .r2) {
                             if (board.squares[square_idx - 8] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .black_queen,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .black_rook,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .black_bishop,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .black_knight,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 8, .promote_queen));
+                                this.add(Move.create(square_idx, square_idx - 8, .promote_rook));
+                                this.add(Move.create(square_idx, square_idx - 8, .promote_knight));
+                                this.add(Move.create(square_idx, square_idx - 8, .promote_bishop));
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx - 9].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9],
-                                    .promoted = .black_queen,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9],
-                                    .promoted = .black_rook,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9],
-                                    .promoted = .black_bishop,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9],
-                                    .promoted = .black_knight,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9, .promote_queen));
+                                this.add(Move.create(square_idx, square_idx - 9, .promote_rook));
+                                this.add(Move.create(square_idx, square_idx - 9, .promote_knight));
+                                this.add(Move.create(square_idx, square_idx - 9, .promote_bishop));
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx - 7].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7],
-                                    .promoted = .black_queen,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7],
-                                    .promoted = .black_rook,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7],
-                                    .promoted = .black_bishop,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                temporary.add(.{
-                                    .to = square_idx - 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7],
-                                    .promoted = .black_knight,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7, .promote_queen));
+                                this.add(Move.create(square_idx, square_idx - 7, .promote_rook));
+                                this.add(Move.create(square_idx, square_idx - 7, .promote_knight));
+                                this.add(Move.create(square_idx, square_idx - 7, .promote_bishop));
                             }
                         } else {
                             if (board.squares[square_idx - 8] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 8,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 8, .none));
                                 if (Rank.of(square_idx) == .r7 and board.squares[square_idx - 16] == .empty) {
-                                    temporary.add(.{
-                                        .to = square_idx - 16,
-                                        .from = square_idx,
-                                        .captured = .empty,
-                                        .promoted = .empty,
-                                        .en_passant_capture = false,
-                                        .en_passant_square = square_idx - 8,
-                                        .en_passant_square_past = board.en_passant,
-                                        .fifty_move_past = board.fifty_move,
-                                        .castle = .none,
-                                        .castle_perm_past = board.castle,
-                                    });
+                                    this.add(Move.create(square_idx, square_idx - 16, .none));
                                 }
                             }
                             if (File.of(square_idx) != .fa and board.squares[square_idx - 9].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9, .none));
                             }
                             // Could explicitly check that the pawn is on the 4th rank but that is unnecessary
-                            if (File.of(square_idx) != .fa and square_idx - 9 == board.en_passant) {
-                                temporary.add(.{
-                                    .to = square_idx - 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9],
-                                    .promoted = .empty,
-                                    .en_passant_capture = true,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                            if (File.of(square_idx) != .fa and square_idx - 9 == board.history[board.history_len - 1].en_passant_sq) {
+                                this.add(Move.create(square_idx, square_idx - 9, .en_passant));
                             }
                             if (File.of(square_idx) != .fh and board.squares[square_idx - 7].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7, .none));
                             }
                             // Could explicitly check that the pawn is on the 4th rank but that is unnecessary
-                            if (File.of(square_idx) != .fh and square_idx - 7 == board.en_passant) {
-                                temporary.add(.{
-                                    .to = square_idx - 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7],
-                                    .promoted = .empty,
-                                    .en_passant_capture = true,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                            if (File.of(square_idx) != .fh and square_idx - 7 == board.history[board.history_len - 1].en_passant_sq) {
+                                this.add(Move.create(square_idx, square_idx - 7, .en_passant));
                             }
                         }
                     },
                     .black_knight => {
                         if (File.of(square_idx) != .fa) {
                             if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 17,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 17],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 17, .en_passant));
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 15,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 15],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 15, .en_passant));
                             }
                         }
                         if (File.of(square_idx) != .fh) {
                             if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 15,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 15],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 15, .en_passant));
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 17,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 17],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 17, .en_passant));
                             }
                         }
                         if (File.of(square_idx) != .fb and File.of(square_idx) != .fa) {
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 10,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 10],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 10, .en_passant));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 6,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 6],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 6, .en_passant));
                             }
                         }
                         if (File.of(square_idx) != .fg and File.of(square_idx) != .fh) {
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 6,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 6],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 6, .en_passant));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 10,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 10],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 10, .en_passant));
                             }
                         }
                     },
@@ -1606,31 +516,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + 9 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9 * diagonal_idx, .none));
                             } else if (board.squares[square_idx + 9 * diagonal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1642,31 +530,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + 7 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7 * diagonal_idx, .none));
                             } else if (board.squares[square_idx + 7 * diagonal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1678,31 +544,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9 * diagonal_idx, .none));
                             } else if (board.squares[square_idx - 9 * diagonal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1714,31 +558,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7 * diagonal_idx, .none));
                             } else if (board.squares[square_idx - 7 * diagonal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1752,31 +574,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + horizontal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + horizontal_idx, .none));
                             } else if (board.squares[square_idx + horizontal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + horizontal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + horizontal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1788,31 +588,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - horizontal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - horizontal_idx, .none));
                             } else if (board.squares[square_idx - horizontal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - horizontal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - horizontal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1824,31 +602,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 8 * vertical_idx, .none));
                             } else if (board.squares[square_idx + 8 * vertical_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 8 * vertical_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 8 * vertical_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1860,31 +616,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 8 * vertical_idx, .none));
                             } else if (board.squares[square_idx - 8 * vertical_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 8 * vertical_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 8 * vertical_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -1892,181 +626,15 @@ pub const Movelist = struct {
                         }
                     },
                     .black_queen => {
-                        for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
-                            if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
-                                break;
-                            }
-                            if (board.squares[square_idx + horizontal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                            } else if (board.squares[square_idx + horizontal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + horizontal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                break;
-                            } else {
-                                break;
-                            }
-                        }
-                        for (0..8) |horizontal_idx_usize| {
-                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
-                            if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
-                                break;
-                            }
-                            if (board.squares[square_idx - horizontal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                            } else if (board.squares[square_idx - horizontal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - horizontal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - horizontal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                break;
-                            } else {
-                                break;
-                            }
-                        }
-                        for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
-                            if (square_idx + 8 * vertical_idx > 63) {
-                                break;
-                            }
-                            if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                            } else if (board.squares[square_idx + 8 * vertical_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 8 * vertical_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                break;
-                            } else {
-                                break;
-                            }
-                        }
-                        for (0..8) |vertical_idx_usize| {
-                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
-                            if (square_idx < 8 * vertical_idx) {
-                                break;
-                            }
-                            if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                            } else if (board.squares[square_idx - 8 * vertical_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 8 * vertical_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 8 * vertical_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
-                                break;
-                            } else {
-                                break;
-                            }
-                        }
                         for (0..8) |diagonal_idx_usize| {
                             const diagonal_idx: u8 = @truncate(diagonal_idx_usize + 1);
                             if (File.of(square_idx + 9 * diagonal_idx) == .fa or square_idx + 9 * diagonal_idx > 63) {
                                 break;
                             }
                             if (board.squares[square_idx + 9 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9 * diagonal_idx, .none));
                             } else if (board.squares[square_idx + 9 * diagonal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -2078,31 +646,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx + 7 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx + 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7 * diagonal_idx, .none));
                             } else if (board.squares[square_idx + 7 * diagonal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx + 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -2114,31 +660,9 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 9 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9 * diagonal_idx, .none));
                             } else if (board.squares[square_idx - 9 * diagonal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 9 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9 * diagonal_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -2150,31 +674,65 @@ pub const Movelist = struct {
                                 break;
                             }
                             if (board.squares[square_idx - 7 * diagonal_idx] == .empty) {
-                                temporary.add(.{
-                                    .to = square_idx - 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = .empty,
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7 * diagonal_idx, .none));
                             } else if (board.squares[square_idx - 7 * diagonal_idx].isWhite()) {
-                                temporary.add(.{
-                                    .to = square_idx - 7 * diagonal_idx,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7 * diagonal_idx],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7 * diagonal_idx, .none));
+                                break;
+                            } else {
+                                break;
+                            }
+                        }
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
+                            if (File.of(square_idx + horizontal_idx) == .fa or square_idx + horizontal_idx > 63) {
+                                break;
+                            }
+                            if (board.squares[square_idx + horizontal_idx] == .empty) {
+                                this.add(Move.create(square_idx, square_idx + horizontal_idx, .none));
+                            } else if (board.squares[square_idx + horizontal_idx].isWhite()) {
+                                this.add(Move.create(square_idx, square_idx + horizontal_idx, .none));
+                                break;
+                            } else {
+                                break;
+                            }
+                        }
+                        for (0..8) |horizontal_idx_usize| {
+                            const horizontal_idx: u8 = @truncate(horizontal_idx_usize + 1);
+                            if (square_idx < horizontal_idx or File.of(square_idx - horizontal_idx) == .fh) {
+                                break;
+                            }
+                            if (board.squares[square_idx - horizontal_idx] == .empty) {
+                                this.add(Move.create(square_idx, square_idx - horizontal_idx, .none));
+                            } else if (board.squares[square_idx - horizontal_idx].isWhite()) {
+                                this.add(Move.create(square_idx, square_idx - horizontal_idx, .none));
+                                break;
+                            } else {
+                                break;
+                            }
+                        }
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
+                            if (square_idx + 8 * vertical_idx > 63) {
+                                break;
+                            }
+                            if (board.squares[square_idx + 8 * vertical_idx] == .empty) {
+                                this.add(Move.create(square_idx, square_idx + 8 * vertical_idx, .none));
+                            } else if (board.squares[square_idx + 8 * vertical_idx].isWhite()) {
+                                this.add(Move.create(square_idx, square_idx + 8 * vertical_idx, .none));
+                                break;
+                            } else {
+                                break;
+                            }
+                        }
+                        for (0..8) |vertical_idx_usize| {
+                            const vertical_idx: u8 = @truncate(vertical_idx_usize + 1);
+                            if (square_idx < 8 * vertical_idx) {
+                                break;
+                            }
+                            if (board.squares[square_idx - 8 * vertical_idx] == .empty) {
+                                this.add(Move.create(square_idx, square_idx - 8 * vertical_idx, .none));
+                            } else if (board.squares[square_idx - 8 * vertical_idx].isWhite()) {
+                                this.add(Move.create(square_idx, square_idx - 8 * vertical_idx, .none));
                                 break;
                             } else {
                                 break;
@@ -2183,119 +741,31 @@ pub const Movelist = struct {
                     },
                     .black_king => {
                         if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 8].isBlack()) {
-                            temporary.add(.{
-                                .to = square_idx - 8,
-                                .from = square_idx,
-                                .captured = board.squares[square_idx - 8],
-                                .promoted = .empty,
-                                .en_passant_capture = false,
-                                .en_passant_square = 0,
-                                .en_passant_square_past = board.en_passant,
-                                .fifty_move_past = board.fifty_move,
-                                .castle = .none,
-                                .castle_perm_past = board.castle,
-                            });
+                            this.add(Move.create(square_idx, square_idx - 8, .none));
                         }
                         if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 8].isBlack()) {
-                            temporary.add(.{
-                                .to = square_idx + 8,
-                                .from = square_idx,
-                                .captured = board.squares[square_idx + 8],
-                                .promoted = .empty,
-                                .en_passant_capture = false,
-                                .en_passant_square = 0,
-                                .en_passant_square_past = board.en_passant,
-                                .fifty_move_past = board.fifty_move,
-                                .castle = .none,
-                                .castle_perm_past = board.castle,
-                            });
+                            this.add(Move.create(square_idx, square_idx + 8, .none));
                         }
                         if (File.of(square_idx) != .fa) {
                             if (!board.squares[square_idx - 1].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 1,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 1],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 1, .none));
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 9].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 9],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 9, .none));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 7].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 7],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 7, .none));
                             }
                         }
                         if (File.of(square_idx) != .fh) {
                             if (!board.squares[square_idx + 1].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 1,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 1],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 1, .none));
                             }
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 7].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx - 7,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx - 7],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx - 7, .none));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 9].isBlack()) {
-                                temporary.add(.{
-                                    .to = square_idx + 9,
-                                    .from = square_idx,
-                                    .captured = board.squares[square_idx + 9],
-                                    .promoted = .empty,
-                                    .en_passant_capture = false,
-                                    .en_passant_square = 0,
-                                    .en_passant_square_past = board.en_passant,
-                                    .fifty_move_past = board.fifty_move,
-                                    .castle = .none,
-                                    .castle_perm_past = board.castle,
-                                });
+                                this.add(Move.create(square_idx, square_idx + 9, .none));
                             }
                         }
                     },
@@ -2304,36 +774,20 @@ pub const Movelist = struct {
             }
         }
 
-        for (0..temporary.move_count) |move_idx| {
+        var movelist_count_legal: u8 = 0;
+        for (0..this.move_count) |move_idx| {
             const color_check: Color = board.side_to_move;
 
-            board.makeMove(temporary.move[move_idx]);
+            board.makeMove(this.move[move_idx]);
 
             if (!board.isCheck(color_check)) {
-                this.add(temporary.move[move_idx]);
+                this.move[movelist_count_legal] = this.move[move_idx];
+                movelist_count_legal += 1;
             }
 
-            board.undoMove(temporary.move[move_idx]);
+            board.undoMove(this.move[move_idx]);
         }
-    }
-    pub fn init() Movelist {
-        const move_empty: Move = .{
-            .from = 0,
-            .to = 0,
-            .en_passant_capture = false,
-            .en_passant_square = 0,
-            .en_passant_square_past = 0,
-            .captured = .empty,
-            .promoted = .empty,
-            .fifty_move_past = 0,
-            .castle = .none,
-            .castle_perm_past = 0,
-        };
-        const movelist: Movelist = .{
-            .move = [1]Move{move_empty} ** move_count_max,
-            .move_count = 0,
-        };
-        return movelist;
+        this.move_count = movelist_count_legal;
     }
     pub fn add(this: *@This(), move: Move) void {
         assert(this.move_count < move_count_max);
@@ -2342,23 +796,11 @@ pub const Movelist = struct {
     }
     pub fn clear(this: *@This()) void {
         for (0..this.move_count) |move_idx| {
-            this.move[move_idx] = .{
-                .from = 0,
-                .to = 0,
-                .en_passant_capture = false,
-                .en_passant_square = 0,
-                .en_passant_square_past = 0,
-                .captured = .empty,
-                .promoted = .empty,
-                .fifty_move_past = 0,
-                .castle = .none,
-                .castle_perm_past = 0,
-            };
+            this.move[move_idx] = undefined;
         }
         this.move_count = 0;
     }
-    pub fn print(this: *const @This()) void {
-        const std = @import("std");
+    pub fn print(this: @This()) void {
         std.debug.print("Move count {} of {}\n", .{ this.move_count, move_count_max });
         for (0..this.move_count) |move_idx| {
             std.debug.print("[{d:3}] => ", .{

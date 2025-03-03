@@ -1,20 +1,21 @@
-const assert = @import("./util.zig").assert;
+const std = @import("std");
+const assert = std.debug.assert;
 
 const Move = @import("./move.zig").Move;
 const Movelist = @import("./move.zig").Movelist;
 const move_count_max = @import("./move.zig").move_count_max;
 
-pub const Color = enum(u1) {
+pub const Color = enum(u8) {
     white,
     black,
 };
-pub const Result = enum(u4) {
+pub const Result = enum(u8) {
     white,
     black,
     draw,
     none,
 };
-pub const Piece = enum(u4) {
+pub const Piece = enum(u8) {
     empty,
     white_pawn,
     white_knight,
@@ -52,7 +53,7 @@ pub const Piece = enum(u4) {
     }
 };
 
-pub const Castle = enum(u4) {
+pub const Castle = enum(u8) {
     none,
     white_kingside,
     white_queenside,
@@ -87,36 +88,37 @@ pub const Rank = enum(u8) {
     }
 };
 
-pub const fen_start: []const u8 = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-pub const square_count: u8 = 64;
 pub const Board = struct {
+    pub const fen_start = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    pub const square_count = 64;
+    pub const game_len_max = 4096;
+
+    /// Game state information that can't be calculated from other information
+    pub const History = struct {
+        /// Index of the square on which en passant is possible, 0 if not possible, because that value can not be a valid square for en passant
+        en_passant_sq: u8,
+        /// Counted in half-moves
+        fifty_move: u8,
+        /// Only the lowest 4 bits matter and are 1 if that type of castling is allowed
+        /// For which bit corresponds to which castling type see the Castle enum
+        castle: u8,
+    };
+
     squares: [square_count]Piece,
-    /// Index of the square on which en passant is possible, 0 if not possible, because that value can not be a valid square for en passant
-    en_passant: u8,
-    /// Counted in half-moves
-    fifty_move: u8,
     side_to_move: Color,
-    castle: u8,
+    history: [game_len_max]History,
+    /// Obviously equivalent to game length (If not starting the engine in the middle of the game)
+    history_len: u16,
     pub fn alloc(fen: ?[]const u8) Board {
-        var board: Board = .{
-            .squares = .{.empty} ** 64,
-            .en_passant = 0,
-            .fifty_move = 0,
-            .castle = 0,
-            .side_to_move = .white,
-        };
-        if (fen) |f| {
-            board.readFen(f);
-        } else {
-            board.readFen(fen_start);
-        }
+        var board: Board = undefined;
+        board.readFen(if (fen) |f| f else fen_start);
         return board;
     }
     pub fn readFen(this: *@This(), fen: []const u8) void {
         var offset: usize = 0;
-        // At most 1 letter per square + 7 '/' charachters
+        // NOTE: At most 1 letter per square + 7 '/' charachters
         const piece_info_char_max: usize = 71;
-        // Super hacky parsing. Necessary to have a1 be the square at index 0 and preserving an intuitive represenation when printing
+        // HACK: Necessary to have a1 be the square at index 0 and preserving an intuitive represenation when printing
         var board_idx: usize = 56;
         for (0..piece_info_char_max) |char_idx| {
             switch (fen[char_idx]) {
@@ -186,7 +188,7 @@ pub const Board = struct {
                     break;
                 },
                 else => {
-                    assert(false);
+                    unreachable;
                 },
             }
             offset += 1;
@@ -195,53 +197,52 @@ pub const Board = struct {
         switch (fen[offset]) {
             'w' => this.side_to_move = .white,
             'b' => this.side_to_move = .black,
-            else => assert(false),
+            else => unreachable,
         }
 
         offset += 2;
         var offset_temp: usize = 0;
         const castle_info_char_max: usize = 4;
+
+        this.history_len = 1;
+        this.history[0].castle = 0;
         for (0..castle_info_char_max) |char_idx| {
             offset_temp = char_idx + 1;
             switch (fen[offset + char_idx]) {
-                'K' => this.castle |= 1 << @intFromEnum(Castle.white_kingside),
-                'k' => this.castle |= 1 << @intFromEnum(Castle.black_kingside),
-                'Q' => this.castle |= 1 << @intFromEnum(Castle.white_queenside),
-                'q' => this.castle |= 1 << @intFromEnum(Castle.black_queenside),
-                '-' => {
-                    this.castle = 0;
-                    break;
-                },
-                else => assert(false),
+                'K' => this.history[0].castle |= 1 << @intFromEnum(Castle.white_kingside),
+                'k' => this.history[0].castle |= 1 << @intFromEnum(Castle.black_kingside),
+                'Q' => this.history[0].castle |= 1 << @intFromEnum(Castle.white_queenside),
+                'q' => this.history[0].castle |= 1 << @intFromEnum(Castle.black_queenside),
+                '-' => break,
+                else => unreachable,
             }
         }
 
         offset += offset_temp + 1;
         if (fen[offset] == '-') {
-            this.en_passant = 0;
+            this.history[0].en_passant_sq = 0;
             offset += 2;
         } else {
             assert(fen[offset] >= 'a');
             assert(fen[offset] <= 'h');
             assert(fen[offset + 1] >= '1');
             assert(fen[offset + 1] <= '8');
-            this.en_passant = fen[offset] - 'a' + (fen[offset + 1] - '1') * 8;
+            this.history[0].en_passant_sq = fen[offset] - 'a' + (fen[offset + 1] - '1') * 8;
             offset += 3;
         }
 
-        this.fifty_move = 0;
+        this.history[0].fifty_move = 0;
         for (offset..fen.len) |char_idx| {
             if (fen[char_idx] == ' ') {
                 break;
             }
-            this.fifty_move *= 10;
-            this.fifty_move += fen[char_idx] - '0';
+            this.history[0].fifty_move *= 10;
+            this.history[0].fifty_move += fen[char_idx] - '0';
         }
     }
     pub fn makeMove(this: *@This(), move: Move) void {
         // Less than 101 because of a kinda stupid way the move generation works
         assert(this.fifty_move < 101);
-        assert(this.squares[move.to] == move.captured);
 
         // TODO: Refactor this sucker...
         if (Rank.of(move.from) == .r1) {
@@ -383,17 +384,14 @@ pub const Board = struct {
         this.castle = move.castle_perm_past;
         this.fifty_move = move.fifty_move_past;
     }
-    pub fn copyTo(this: *const @This(), target: *Board) void {
-        target.castle = this.castle;
-        target.en_passant = this.en_passant;
+    pub fn copyTo(this: @This(), target: *Board) void {
         target.side_to_move = this.side_to_move;
-        target.fifty_move = this.fifty_move;
-        for (0..square_count) |square_idx| {
-            target.squares[square_idx] = this.squares[square_idx];
-        }
+        target.squares = this.squares;
+        target.history = this.history;
+        target.history_len = this.history_len;
     }
     /// Check if the square it index `square_idx` is attacked by a piece of opposite color to `color`
-    pub fn isSquareAttacked(this: *const @This(), square_idx: u8, color: Color) bool {
+    pub fn isSquareAttacked(this: @This(), square_idx: u8, color: Color) bool {
         assert(square_idx < 64);
 
         if (color == .white) {
@@ -750,7 +748,7 @@ pub const Board = struct {
         return false;
     }
     /// Check if the player `color` is in check
-    pub fn isCheck(this: *const @This(), color: Color) bool {
+    pub fn isCheck(this: @This(), color: Color) bool {
         const king_target: Piece = switch (color) {
             .white => .white_king,
             .black => .black_king,
@@ -766,9 +764,8 @@ pub const Board = struct {
 
         return this.isSquareAttacked(square_king, color);
     }
-    pub fn print(this: *const @This()) void {
+    pub fn print(this: @This()) void {
         // Print this way to have a1 be the bottom left square with index 0
-        const std = @import("std");
         std.debug.print("   a b c d e f g h\n", .{});
         for (0..8) |row_idx| {
             std.debug.print("{} ", .{8 - row_idx});
@@ -801,7 +798,7 @@ pub const Board = struct {
             },
         });
     }
-    pub fn result(this: *const @This(), movelist: *const Movelist) Result {
+    pub fn result(this: @This(), movelist: Movelist) Result {
         if (movelist.move_count == 0) {
             if (this.isCheck(this.side_to_move)) {
                 return switch (this.side_to_move) {
@@ -819,8 +816,7 @@ pub const Board = struct {
             }
         }
     }
-    pub fn debug(this: *const @This()) void {
-        const std = @import("std");
+    pub fn debug(this: @This()) void {
         std.debug.print("      a      b      c      d      e      f      g      h\n", .{});
         for (0..8) |row_idx| {
             std.debug.print("{} ", .{8 - row_idx});

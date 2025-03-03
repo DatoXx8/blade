@@ -1,10 +1,7 @@
 const std = @import("std");
-
-const assert = @import("./util.zig").assert;
+const assert = std.debug.assert;
 
 const Board = @import("./board.zig").Board;
-const square_count = @import("./board.zig").square_count;
-const fen_start = @import("./board.zig").fen_start;
 const Movelist = @import("./move.zig").Movelist;
 const Move = @import("./move.zig").Move;
 
@@ -14,29 +11,17 @@ const Pcg = @import("./prng.zig").Pcg;
 fn simulateMoves(starting: *Board, board: *Board, comptime move_num: u32, rng: u64) void {
     std.debug.print("rng={}", .{rng});
     Pcg.init(rng);
-    var movelist: Movelist = Movelist.init();
+
     starting.copyTo(board);
 
-    const move_empty: Move = .{
-        .from = 0,
-        .to = 0,
-        .en_passant_capture = false,
-        .en_passant_square = 0,
-        .en_passant_square_past = 0,
-        .captured = .empty,
-        .promoted = .empty,
-        .fifty_move_past = 0,
-        .castle = .none,
-        .castle_perm_past = 0,
-    };
-
-    var movelist_saved: [move_num]Move = [1]Move{move_empty} ** move_num;
+    var movelist: Movelist = undefined;
+    var movelist_saved: [move_num]Move = undefined;
     var move_played: usize = 0;
     for (0..move_num) |movelist_idx| {
         movelist.clear();
         movelist.generate(board);
 
-        if (board.result(&movelist) != .none) {
+        if (board.result(movelist) != .none) {
             break;
         }
 
@@ -51,13 +36,15 @@ fn simulateMoves(starting: *Board, board: *Board, comptime move_num: u32, rng: u
         board.undoMove(movelist_saved[move_played - (movelist_idx + 1)]);
     }
 
-    assert(starting.castle == board.castle);
-    assert(starting.en_passant == board.en_passant);
+    assert(starting.history[0].castle == board.history[0].castle);
+    assert(starting.history[0].en_passant_sq == board.history[0].en_passant_sq);
+    assert(starting.history[0].fifty_move == board.history[0].fifty_move);
+
     assert(starting.side_to_move == board.side_to_move);
-    assert(starting.fifty_move == board.fifty_move);
-    for (0..square_count) |square_idx| {
+    for (0..Board.square_count) |square_idx| {
         assert(starting.squares[square_idx] == board.squares[square_idx]);
     }
+
     std.debug.print(" passed\n", .{});
 }
 
@@ -100,8 +87,8 @@ pub fn main() !void {
         assert(move_num > 0);
     }
 
-    var starting: Board = Board.alloc(fen_start);
-    var board: Board = Board.alloc(fen_start);
+    var starting: Board = Board.alloc(Board.fen_start);
+    var board: Board = Board.alloc(Board.fen_start);
     if (loop_infinite) {
         var loop_idx: u64 = 0;
         // TODO: Decide how to reseed the random number generator here...
