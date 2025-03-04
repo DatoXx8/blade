@@ -47,13 +47,13 @@ pub const Movelist = struct {
 
         if (board.side_to_move == .white) {
             // TODO: This also needs to be made 960 compatible
-            if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.white_kingside))) == 1 and
+            if (board.history[board.history_len - 1].castle & (1 << @intFromEnum(Castle.white_kingside)) == 1 and
                 board.squares[5] == .empty and board.squares[6] == .empty and board.squares[7] == .white_rook and
                 !board.isSquareAttacked(5, .white) and !board.isSquareAttacked(6, .white))
             {
                 this.add(Move.create(4, 6, .castle_kingside));
             }
-            if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.white_queenside))) == 1 and
+            if (board.history[board.history_len - 1].castle & (1 << @intFromEnum(Castle.white_queenside)) == 1 and
                 board.squares[0] == .white_rook and
                 board.squares[1] == .empty and board.squares[2] == .empty and
                 board.squares[3] == .empty and !board.isSquareAttacked(1, .white) and
@@ -412,14 +412,14 @@ pub const Movelist = struct {
             }
         } else {
             // TODO: This also needs to be made 960 compatible
-            if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.black_kingside))) == 1 and
+            if (board.history[board.history_len - 1].castle & (1 << @intFromEnum(Castle.black_kingside)) == 1 and
                 board.squares[61] == .empty and board.squares[62] == .empty and board.squares[63] == .black_rook and
                 !board.isSquareAttacked(61, .black) and !board.isSquareAttacked(62, .black))
             {
                 this.add(Move.create(60, 62, .castle_kingside));
             }
-            if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.black_queenside))) == 1 and board.squares[60] == .black_rook and
-                board.squares[57] == .empty and board.squares[58] == .empty and
+            if (board.history[board.history_len - 1].castle & (1 << @intFromEnum(Castle.black_queenside)) == 1 and
+                board.squares[60] == .black_rook and board.squares[57] == .empty and board.squares[58] == .empty and
                 board.squares[59] == .empty and !board.isSquareAttacked(57, .black) and
                 !board.isSquareAttacked(58, .black) and !board.isSquareAttacked(59, .black))
             {
