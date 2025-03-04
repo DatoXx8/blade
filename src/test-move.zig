@@ -1,16 +1,16 @@
 const std = @import("std");
 const assert = std.debug.assert;
+const Pcg = std.rand.Pcg;
 
 const Board = @import("./board.zig").Board;
 const Movelist = @import("./move.zig").Movelist;
 const Move = @import("./move.zig").Move;
 
-const Pcg = @import("./prng.zig").Pcg;
-
 /// Ensure that playing random moves and then undoing them results in the starting position
 fn simulateMoves(starting: *Board, board: *Board, comptime move_num: u32, rng: u64) void {
     std.debug.print("rng={}", .{rng});
-    Pcg.init(rng);
+
+    var pcg = Pcg.init(rng);
 
     starting.copyTo(board);
 
@@ -19,31 +19,33 @@ fn simulateMoves(starting: *Board, board: *Board, comptime move_num: u32, rng: u
     var move_played: usize = 0;
     for (0..move_num) |movelist_idx| {
         movelist.clear();
+
         movelist.generate(board);
 
         if (board.result(movelist) != .none) {
             break;
         }
 
-        const move_idx: u32 = Pcg.randBelow(movelist.move_count);
+        const move_idx: u32 = pcg.random().uintLessThan(u32, movelist.move_count);
         movelist_saved[movelist_idx] = movelist.move[move_idx];
 
         board.makeMove(movelist.move[move_idx]);
 
         move_played = movelist_idx + 1;
     }
-    // for (0..move_played) |movelist_idx| {
-    //     board.undoMove(movelist_saved[move_played - (movelist_idx + 1)]);
-    // }
-    //
-    // assert(starting.history[0].castle == board.history[0].castle);
-    // assert(starting.history[0].en_passant_sq == board.history[0].en_passant_sq);
-    // assert(starting.history[0].fifty_move == board.history[0].fifty_move);
-    //
-    // assert(starting.side_to_move == board.side_to_move);
-    // for (0..Board.square_count) |square_idx| {
-    //     assert(starting.squares[square_idx] == board.squares[square_idx]);
-    // }
+
+    for (0..move_played) |movelist_idx| {
+        board.undoMove(movelist_saved[move_played - (movelist_idx + 1)]);
+    }
+
+    assert(starting.history[0].castle == board.history[0].castle);
+    assert(starting.history[0].en_passant_sq == board.history[0].en_passant_sq);
+    assert(starting.history[0].fifty_move == board.history[0].fifty_move);
+
+    assert(starting.side_to_move == board.side_to_move);
+    for (0..Board.square_count) |square_idx| {
+        assert(starting.squares[square_idx] == board.squares[square_idx]);
+    }
 
     std.debug.print(" passed\n", .{});
 }
@@ -63,7 +65,7 @@ pub fn main() !void {
     var loop_count: u64 = 1;
     // Skip the executable call
     _ = args.next();
-    if (args.next()) |arg| {
+    while (args.next()) |arg| {
         if (std.mem.startsWith(u8, arg, "rng=")) {
             const offset = "rng="[0..].len;
             rng_saved = try std.fmt.parseInt(u64, arg[offset..], 10);

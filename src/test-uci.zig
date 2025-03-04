@@ -1,5 +1,6 @@
 const std = @import("std");
 const assert = std.debug.assert;
+const Pcg = std.rand.Pcg;
 
 const Board = @import("./board.zig").Board;
 const Movelist = @import("./move.zig").Movelist;
@@ -7,14 +8,14 @@ const Move = @import("./move.zig").Move;
 
 const Uci = @import("./uci.zig").Uci;
 
-const Pcg = @import("./prng.zig").Pcg;
-
 /// Ensure that playing random moves and then undoing them results in the starting position
 fn simulateUci(board: *Board, comptime move_num: u32, rng: u64) void {
-    std.debug.print("rng={}", .{rng});
+    std.debug.print("rng={}\n", .{rng});
 
-    Pcg.init(rng);
+    var pcg = Pcg.init(rng);
+
     board.readFen(Board.fen_start);
+
     var movelist: Movelist = .{ .move = undefined, .move_count = 0 };
 
     for (0..move_num) |_| {
@@ -29,17 +30,13 @@ fn simulateUci(board: *Board, comptime move_num: u32, rng: u64) void {
             const expected: Move = movelist.move[move_idx];
             const encoded: [5]u8 = Uci.encode(expected, board.side_to_move);
             const decoded: Move = Uci.parse(board.*, encoded);
-            // board.debug();
-            // expected.print();
-            // decoded.print();
-            // std.debug.print("\n", .{});
 
             assert(decoded.fromSq() == expected.fromSq());
             assert(decoded.toSq() == expected.toSq());
             assert(decoded.flag() == expected.flag());
         }
 
-        const move_idx: u32 = Pcg.randBelow(movelist.move_count);
+        const move_idx: u32 = pcg.random().uintLessThan(u32, movelist.move_count);
         board.makeMove(movelist.move[move_idx]);
     }
 
@@ -61,7 +58,7 @@ pub fn main() !void {
     var loop_count: u64 = 1;
     // Skip the executable call
     _ = args.next();
-    if (args.next()) |arg| {
+    while (args.next()) |arg| {
         if (std.mem.startsWith(u8, arg, "rng=")) {
             const offset = "rng="[0..].len;
             rng_saved = try std.fmt.parseInt(u64, arg[offset..], 10);
