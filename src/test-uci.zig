@@ -10,7 +10,7 @@ const Uci = @import("./uci.zig").Uci;
 
 /// Ensure that playing random moves and then undoing them results in the starting position
 fn simulateUci(board: *Board, comptime move_num: u32, rng: u64) void {
-    std.debug.print("rng={}\n", .{rng});
+    std.debug.print("rng={}", .{rng});
 
     var pcg = Pcg.init(rng);
 
