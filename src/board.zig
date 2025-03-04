@@ -54,11 +54,11 @@ pub const Piece = enum(u8) {
 };
 
 pub const Castle = enum(u8) {
-    none,
-    white_kingside,
-    white_queenside,
-    black_kingside,
-    black_queenside,
+    none = 0,
+    white_kingside = 1,
+    white_queenside = 2,
+    black_kingside = 3,
+    black_queenside = 4,
 };
 
 pub const File = enum(u8) {
@@ -102,6 +102,7 @@ pub const Board = struct {
         /// Only the lowest 4 bits matter and are 1 if that type of castling is allowed
         /// For which bit corresponds to which castling type see the Castle enum
         castle: u8,
+        captured: Piece,
     };
 
     squares: [square_count]Piece,
@@ -110,7 +111,12 @@ pub const Board = struct {
     /// Obviously equivalent to game length (If not starting the engine in the middle of the game)
     history_len: u16,
     pub fn alloc(fen: ?[]const u8) Board {
-        var board: Board = undefined;
+        var board: Board = .{
+            .squares = [1]Piece{.empty} ** Board.square_count,
+            .side_to_move = .white,
+            .history = undefined,
+            .history_len = 0,
+        };
         board.readFen(if (fen) |f| f else fen_start);
         return board;
     }
@@ -242,147 +248,158 @@ pub const Board = struct {
     }
     pub fn makeMove(this: *@This(), move: Move) void {
         // Less than 101 because of a kinda stupid way the move generation works
-        assert(this.fifty_move < 101);
+        assert(this.history[this.history_len - 1].fifty_move < 101);
 
-        // TODO: Refactor this sucker...
-        if (Rank.of(move.from) == .r1) {
-            if (File.of(move.from) == .fa and this.squares[move.from] == .white_rook) {
-                this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.white_queenside)));
-            } else if (File.of(move.from) == .fh and this.squares[move.from] == .white_rook) {
-                this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.white_kingside)));
-            }
-        } else if (Rank.of(move.from) == .r8) {
-            if (File.of(move.from) == .fa and this.squares[move.from] == .black_rook) {
-                this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.black_queenside)));
-            } else if (File.of(move.from) == .fh and this.squares[move.from] == .black_rook) {
-                this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.black_kingside)));
-            }
-        }
-        if (this.squares[move.from] == .white_king) {
-            this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.white_kingside)) ^ (1 << @intFromEnum(Castle.white_queenside)));
-        } else if (this.squares[move.from] == .black_king) {
-            this.castle = this.castle & (0xff ^ (1 << @intFromEnum(Castle.black_kingside)) ^ (1 << @intFromEnum(Castle.black_queenside)));
-        }
+        var history_new: History = undefined;
 
-        if (move.en_passant_capture) {
-            this.squares[move.to] = this.squares[move.from];
-            this.squares[move.from] = .empty;
+        history_new.captured = this.squares[move.toSq()];
+
+        if (move.flag() == .en_passant) {
+            history_new.fifty_move = 0;
+            history_new.castle = this.history[this.history_len - 1].castle;
+            history_new.en_passant_sq = 0;
             if (this.side_to_move == .white) {
-                this.squares[move.to - 8] = .empty;
+                this.squares[move.toSq()] = .white_pawn;
+                this.squares[this.history[this.history_len - 1].en_passant_sq] = .empty;
             } else {
-                this.squares[move.to + 8] = .empty;
+                this.squares[move.toSq()] = .black_pawn;
+                this.squares[this.history[this.history_len - 1].en_passant_sq] = .empty;
             }
-
-            this.fifty_move = 0;
-        } else if (move.castle != .none) {
-            switch (move.castle) {
-                .none => assert(false),
-                .white_kingside => {
-                    this.squares[4] = .empty;
-                    this.squares[5] = .white_rook;
-                    this.squares[6] = .white_king;
-                    this.squares[7] = .empty;
-                },
-                .white_queenside => {
-                    this.squares[4] = .empty;
-                    this.squares[3] = .white_rook;
-                    this.squares[2] = .white_king;
-                    this.squares[0] = .empty;
-                },
-                .black_kingside => {
-                    this.squares[60] = .empty;
-                    this.squares[61] = .black_rook;
-                    this.squares[62] = .black_king;
-                    this.squares[63] = .empty;
-                },
-                .black_queenside => {
-                    this.squares[60] = .empty;
-                    this.squares[59] = .black_rook;
-                    this.squares[58] = .black_king;
-                    this.squares[56] = .empty;
-                },
+            this.squares[move.fromSq()] = .empty;
+        } else if (move.flag() == .castle_kingside) {
+            history_new.fifty_move = this.history[this.history_len - 1].fifty_move + 1;
+            if (this.side_to_move == .white) {
+                this.squares[4] = .empty;
+                this.squares[5] = .white_rook;
+                this.squares[6] = .white_king;
+                this.squares[7] = .empty;
+            } else {
+                this.squares[60] = .empty;
+                this.squares[61] = .black_rook;
+                this.squares[62] = .black_king;
+                this.squares[63] = .empty;
+            }
+        } else if (move.flag() == .castle_queenside) {
+            history_new.fifty_move = this.history[this.history_len - 1].fifty_move + 1;
+            history_new.en_passant_sq = 0;
+            if (this.side_to_move == .white) {
+                // TODO: This also needs to be made 960 compatible
+                history_new.castle = this.history[this.history_len - 1].castle & 0b11111100;
+                this.squares[0] = .empty;
+                this.squares[1] = .empty;
+                this.squares[2] = .white_king;
+                this.squares[3] = .white_rook;
+                this.squares[4] = .empty;
+            } else {
+                // TODO: This also needs to be made 960 compatible
+                history_new.castle = this.history[this.history_len - 1].castle & 0b11110011;
+                this.squares[56] = .empty;
+                this.squares[57] = .empty;
+                this.squares[58] = .black_king;
+                this.squares[59] = .black_rook;
+                this.squares[60] = .empty;
             }
         } else {
-            this.fifty_move = switch (move.promoted != .empty or move.captured != .empty or
-                this.squares[move.from] == .white_pawn or this.squares[move.from] == .black_pawn) {
-                true => 0,
-                false => this.fifty_move + 1,
-            };
-
-            if (move.promoted == .empty) {
-                this.squares[move.to] = this.squares[move.from];
+            if (this.squares[move.fromSq()] == .white_pawn or this.squares[move.fromSq()] == .black_pawn or
+                this.squares[move.toSq()] != .empty)
+            {
+                history_new.fifty_move = 0;
             } else {
-                this.squares[move.to] = move.promoted;
-                this.fifty_move = 0;
+                history_new.fifty_move = this.history[this.history_len - 1].fifty_move + 1;
             }
-            this.squares[move.from] = .empty;
+
+            // TODO: Make this 960 compatible. I guess comparing if the rook is above or below the king square works.
+            if (this.squares[move.fromSq()] == .white_king) {
+                history_new.castle = this.history[this.history_len - 1].castle & 0b11111100;
+            } else if (this.squares[move.fromSq()] == .white_rook) {
+                if (File.of(move.fromSq()) == .fa) {
+                    history_new.castle = this.history[this.history_len - 1].castle & 0b11111101;
+                } else if (File.of(move.fromSq()) == .fh) {
+                    history_new.castle = this.history[this.history_len - 1].castle & 0b11111110;
+                }
+            } else if (this.squares[move.fromSq()] == .black_king) {
+                history_new.castle = this.history[this.history_len - 1].castle & 0b11110011;
+            } else if (this.squares[move.fromSq()] == .black_rook) {
+                if (File.of(move.fromSq()) == .fa) {
+                    history_new.castle = this.history[this.history_len - 1].castle & 0b11110111;
+                } else if (File.of(move.fromSq()) == .fh) {
+                    history_new.castle = this.history[this.history_len - 1].castle & 0b11111011;
+                }
+            } else {
+                history_new.castle = this.history[this.history_len - 1].castle;
+            }
+
+            this.squares[move.toSq()] = switch (move.flag()) {
+                .none => this.squares[move.fromSq()],
+                .promote_queen => if (this.side_to_move == .white) .white_queen else .black_queen,
+                .promote_rook => if (this.side_to_move == .white) .white_rook else .black_rook,
+                .promote_bishop => if (this.side_to_move == .white) .white_bishop else .black_bishop,
+                .promote_knight => if (this.side_to_move == .white) .white_knight else .black_knight,
+                else => unreachable,
+            };
+            this.squares[move.fromSq()] = .empty;
         }
-        this.side_to_move = switch (this.side_to_move) {
-            .white => .black,
-            .black => .white,
-        };
-        // This is 0 in case en passant is not possible
-        this.en_passant = move.en_passant_square;
+
+        this.side_to_move = if (this.side_to_move == .white) .black else .white;
+        this.history[this.history_len] = history_new;
+        this.history_len += 1;
     }
     pub fn undoMove(this: *@This(), move: Move) void {
-        assert(this.squares[move.from] == .empty);
+        assert(this.squares[move.fromSq()] == .empty);
 
-        if (move.en_passant_capture) {
+        if (move.flag() == .en_passant) {
             if (this.side_to_move == .black) {
-                this.squares[move.from] = .white_pawn;
-                this.squares[move.to] = .empty;
-                this.squares[move.to - 8] = .black_pawn;
+                this.squares[move.toSq()] = .empty;
+                this.squares[this.history[this.history_len - 1].en_passant_sq] = .black_pawn;
+                this.squares[move.fromSq()] = .white_pawn;
             } else {
-                this.squares[move.from] = .black_pawn;
-                this.squares[move.to] = .empty;
-                this.squares[move.to + 8] = .white_pawn;
+                this.squares[move.toSq()] = .empty;
+                this.squares[this.history[this.history_len - 1].en_passant_sq] = .white_pawn;
+                this.squares[move.fromSq()] = .black_pawn;
             }
-        } else if (move.castle != .none) {
-            switch (move.castle) {
-                .none => assert(false),
-                .white_kingside => {
-                    this.squares[4] = .white_king;
-                    this.squares[5] = .empty;
-                    this.squares[6] = .empty;
-                    this.squares[7] = .white_rook;
-                },
-                .white_queenside => {
-                    this.squares[4] = .white_king;
-                    this.squares[3] = .empty;
-                    this.squares[2] = .empty;
-                    this.squares[0] = .white_rook;
-                },
-                .black_kingside => {
-                    this.squares[60] = .black_king;
-                    this.squares[61] = .empty;
-                    this.squares[62] = .empty;
-                    this.squares[63] = .black_rook;
-                },
-                .black_queenside => {
-                    this.squares[60] = .black_king;
-                    this.squares[59] = .empty;
-                    this.squares[58] = .empty;
-                    this.squares[56] = .black_rook;
-                },
+        } else if (move.flag() == .castle_kingside) {
+            // TODO: This also needs to be made 960 compatible
+            if (this.side_to_move == .black) {
+                this.squares[4] = .white_king;
+                this.squares[5] = .empty;
+                this.squares[6] = .empty;
+                this.squares[7] = .white_rook;
+            } else {
+                this.squares[60] = .black_king;
+                this.squares[61] = .empty;
+                this.squares[62] = .empty;
+                this.squares[63] = .black_rook;
+            }
+        } else if (move.flag() == .castle_queenside) {
+            // TODO: This also needs to be made 960 compatible
+            if (this.side_to_move == .black) {
+                this.squares[0] = .white_rook;
+                this.squares[1] = .empty;
+                this.squares[2] = .empty;
+                this.squares[3] = .empty;
+                this.squares[4] = .white_king;
+            } else {
+                this.squares[56] = .black_rook;
+                this.squares[57] = .empty;
+                this.squares[58] = .empty;
+                this.squares[59] = .empty;
+                this.squares[60] = .black_king;
             }
         } else {
-            if (move.promoted == .empty) {
-                this.squares[move.from] = this.squares[move.to];
-            } else {
-                this.squares[move.from] = switch (this.side_to_move) {
-                    .white => .black_pawn,
-                    .black => .white_pawn,
-                };
-            }
-            this.squares[move.to] = move.captured;
+            this.squares[move.fromSq()] = switch (move.flag()) {
+                .none => this.squares[move.toSq()],
+                .promote_queen,
+                .promote_rook,
+                .promote_bishop,
+                .promote_knight,
+                => if (this.side_to_move == .white) .black_pawn else .white_pawn,
+                else => unreachable,
+            };
+            this.squares[move.toSq()] = this.history[this.history_len - 1].captured;
         }
-        this.side_to_move = switch (this.side_to_move) {
-            .white => .black,
-            .black => .white,
-        };
-        this.en_passant = move.en_passant_square_past;
-        this.castle = move.castle_perm_past;
-        this.fifty_move = move.fifty_move_past;
+
+        this.side_to_move = if (this.side_to_move == .white) .black else .white;
+        this.history_len -= 1;
     }
     pub fn copyTo(this: @This(), target: *Board) void {
         target.side_to_move = this.side_to_move;
@@ -809,7 +826,7 @@ pub const Board = struct {
                 return .draw;
             }
         } else {
-            if (this.fifty_move >= 100) {
+            if (this.history[this.history_len - 1].fifty_move >= 100) {
                 return .draw;
             } else {
                 return .none;
@@ -846,25 +863,25 @@ pub const Board = struct {
                 .black => "b",
             },
         });
-        if (this.en_passant != 0) {
+        if (this.history[this.history_len - 1].en_passant_sq != 0) {
             std.debug.print("En passant: {c}{c} = {}\n", .{
-                'a' + (this.en_passant % 8),
-                '1' + @divFloor(this.en_passant, 8),
-                this.en_passant,
+                'a' + (this.history[this.history_len - 1].en_passant_sq % 8),
+                '1' + @divFloor(this.history[this.history_len - 1].en_passant_sq, 8),
+                this.history[this.history_len - 1].en_passant_sq,
             });
         } else {
             std.debug.print("En passant: ---\n", .{});
         }
-        std.debug.print("Fifty move: {}\n", .{this.fifty_move});
-        if (this.castle == 0) {
+        std.debug.print("Fifty move: {}\n", .{this.history[this.history_len - 1].fifty_move});
+        if (this.history[this.history_len - 1].castle == 0) {
             std.debug.print("Castle rights: ---\n", .{});
         } else {
             std.debug.print("Castle rights: {s}{s}{s}{s}\n", .{
                 // There has to be a significantly nicer way of doing this
-                if (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.white_kingside))) == 1) "K" else "-",
-                if (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.white_queenside))) == 1) "Q" else "-",
-                if (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.black_kingside))) == 1) "k" else "-",
-                if (@as(u1, @truncate(this.castle >> @intFromEnum(Castle.black_queenside))) == 1) "q" else "-",
+                if (@as(u1, @truncate(this.history[this.history_len - 1].castle >> @intFromEnum(Castle.white_kingside))) == 1) "K" else "-",
+                if (@as(u1, @truncate(this.history[this.history_len - 1].castle >> @intFromEnum(Castle.white_queenside))) == 1) "Q" else "-",
+                if (@as(u1, @truncate(this.history[this.history_len - 1].castle >> @intFromEnum(Castle.black_kingside))) == 1) "k" else "-",
+                if (@as(u1, @truncate(this.history[this.history_len - 1].castle >> @intFromEnum(Castle.black_queenside))) == 1) "q" else "-",
             });
         }
     }

@@ -31,6 +31,7 @@ pub fn main() !void {
     movelist.generate(&board);
 
     board.print();
+    movelist.print();
 
     try Uci.write(movelist.move[3], board.side_to_move);
     const move: Move = Uci.read(board);

@@ -92,31 +92,25 @@ pub const Uci = struct {
         const from = buffer[0] - 'a' + 8 * (buffer[1] - '1');
         const to = buffer[2] - 'a' + 8 * (buffer[3] - '1');
 
-        const flags: Move.Flag = blk: {
-            if (buffer[4] == '\x00') {
-                break :blk switch (board.side_to_move) {
-                    .white => if (from == 4 and to == 6 and board.squares[4] == .white_king)
-                        .castle_kingside
-                    else if (from == 4 and to == 2 and board.squares[4] == .white_king)
-                        .castle_queenside
-                    else
-                        .none,
-                    .black => if (from == 60 and to == 62 and board.squares[60] == .black_king)
-                        .castle_kingside
-                    else if (from == 60 and to == 58 and board.squares[60] == .black_king)
-                        .castle_queenside
-                    else
-                        .none,
-                };
-            } else {
-                break :blk switch (buffer[4]) {
-                    'N', 'n' => .promote_knight,
-                    'B', 'b' => .promote_bishop,
-                    'R', 'r' => .promote_rook,
-                    'Q', 'q' => .promote_queen,
-                    else => unreachable,
-                };
-            }
+        const flags: Move.Flag = switch (buffer[4]) {
+            'N', 'n' => .promote_knight,
+            'B', 'b' => .promote_bishop,
+            'R', 'r' => .promote_rook,
+            'Q', 'q' => .promote_queen,
+            else => switch (board.side_to_move) {
+                .white => if (from == 4 and to == 6 and board.squares[4] == .white_king)
+                    .castle_kingside
+                else if (from == 4 and to == 2 and board.squares[4] == .white_king)
+                    .castle_queenside
+                else
+                    .none,
+                .black => if (from == 60 and to == 62 and board.squares[60] == .black_king)
+                    .castle_kingside
+                else if (from == 60 and to == 58 and board.squares[60] == .black_king)
+                    .castle_queenside
+                else
+                    .none,
+            },
         };
 
         return Move.create(from, to, flags);

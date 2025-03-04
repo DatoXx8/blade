@@ -10,7 +10,7 @@ const Castle = @import("./board.zig").Castle;
 
 pub const Move = struct {
     pub const Flag = enum(u4) {
-        none,
+        none = 0b0000,
         castle_kingside,
         castle_queenside,
         promote_knight,
@@ -21,19 +21,19 @@ pub const Move = struct {
     };
     data: u16,
     pub fn create(from: u8, to: u8, flags: Flag) Move {
-        return .{ .data = from + (to << 6) + (@as(u16, @intFromEnum(flags)) << 12) };
+        return .{ .data = @as(u16, @intCast(from)) + (@as(u16, @intCast(to)) << 6) + (@as(u16, @intFromEnum(flags)) << 12) };
     }
     pub fn fromSq(this: @This()) u8 {
         return @truncate(this.data & 0b111111);
     }
     pub fn toSq(this: @This()) u8 {
-        return @truncate(this.data & (0b111111 << 6) >> 6);
+        return @truncate((this.data >> 6) & 0b111111);
     }
     pub fn flag(this: @This()) Flag {
-        return @enumFromInt(this.data & (0b1111 << 12) >> 12);
+        return @enumFromInt((this.data >> 12) & 0b1111);
     }
     pub fn print(this: @This()) void {
-        std.debug.print("({d:2} to {d:2}, flag {}\n", .{ this.fromSq(), this.toSq(), this.flag() });
+        std.debug.print("{d:2} to {d:2}, flag {}\n", .{ this.fromSq(), this.toSq(), this.flag() });
     }
 };
 
@@ -46,6 +46,7 @@ pub const Movelist = struct {
         assert(this.move_count == 0);
 
         if (board.side_to_move == .white) {
+            // TODO: This also needs to be made 960 compatible
             if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.white_kingside))) == 1 and
                 board.squares[5] == .empty and board.squares[6] == .empty and board.squares[7] == .white_rook and
                 !board.isSquareAttacked(5, .white) and !board.isSquareAttacked(6, .white))
@@ -410,6 +411,7 @@ pub const Movelist = struct {
                 }
             }
         } else {
+            // TODO: This also needs to be made 960 compatible
             if (@as(u1, @truncate(board.history[board.history_len - 1].castle >> @intFromEnum(Castle.black_kingside))) == 1 and
                 board.squares[61] == .empty and board.squares[62] == .empty and board.squares[63] == .black_rook and
                 !board.isSquareAttacked(61, .black) and !board.isSquareAttacked(62, .black))
@@ -478,34 +480,34 @@ pub const Movelist = struct {
                     .black_knight => {
                         if (File.of(square_idx) != .fa) {
                             if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 17].isBlack()) {
-                                this.add(Move.create(square_idx, square_idx - 17, .en_passant));
+                                this.add(Move.create(square_idx, square_idx - 17, .none));
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 15].isBlack()) {
-                                this.add(Move.create(square_idx, square_idx + 15, .en_passant));
+                                this.add(Move.create(square_idx, square_idx + 15, .none));
                             }
                         }
                         if (File.of(square_idx) != .fh) {
                             if (Rank.of(square_idx) != .r2 and Rank.of(square_idx) != .r1 and !board.squares[square_idx - 15].isBlack()) {
-                                this.add(Move.create(square_idx, square_idx - 15, .en_passant));
+                                this.add(Move.create(square_idx, square_idx - 15, .none));
                             }
                             if (Rank.of(square_idx) != .r7 and Rank.of(square_idx) != .r8 and !board.squares[square_idx + 17].isBlack()) {
-                                this.add(Move.create(square_idx, square_idx + 17, .en_passant));
+                                this.add(Move.create(square_idx, square_idx + 17, .none));
                             }
                         }
                         if (File.of(square_idx) != .fb and File.of(square_idx) != .fa) {
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 10].isBlack()) {
-                                this.add(Move.create(square_idx, square_idx - 10, .en_passant));
+                                this.add(Move.create(square_idx, square_idx - 10, .none));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 6].isBlack()) {
-                                this.add(Move.create(square_idx, square_idx + 6, .en_passant));
+                                this.add(Move.create(square_idx, square_idx + 6, .none));
                             }
                         }
                         if (File.of(square_idx) != .fg and File.of(square_idx) != .fh) {
                             if (Rank.of(square_idx) != .r1 and !board.squares[square_idx - 6].isBlack()) {
-                                this.add(Move.create(square_idx, square_idx - 6, .en_passant));
+                                this.add(Move.create(square_idx, square_idx - 6, .none));
                             }
                             if (Rank.of(square_idx) != .r8 and !board.squares[square_idx + 10].isBlack()) {
-                                this.add(Move.create(square_idx, square_idx + 10, .en_passant));
+                                this.add(Move.create(square_idx, square_idx + 10, .none));
                             }
                         }
                     },
