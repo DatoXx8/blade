@@ -7,6 +7,7 @@ const Rank = @import("./board.zig").Rank;
 const Color = @import("./board.zig").Color;
 const Piece = @import("./board.zig").Piece;
 const Castle = @import("./board.zig").Castle;
+const nameOfSq = @import("./board.zig").nameOfSq;
 
 pub const Move = struct {
     pub const Flag = enum(u4) {
@@ -33,7 +34,7 @@ pub const Move = struct {
         return @enumFromInt((this.data >> 12) & 0b1111);
     }
     pub fn print(this: @This()) void {
-        std.debug.print("{d:2} to {d:2}, flag {}\n", .{ this.fromSq(), this.toSq(), this.flag() });
+        std.debug.print("{d:2}={s} to {d:2}={s}, flag {}\n", .{ this.fromSq(), nameOfSq(this.fromSq()), this.toSq(), nameOfSq(this.toSq()), this.flag() });
     }
 };
 

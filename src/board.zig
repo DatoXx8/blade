@@ -87,6 +87,9 @@ pub const Rank = enum(u8) {
     }
 };
 
+pub fn nameOfSq(sq: u8) [2]u8 {
+    return [2]u8{ 'a' + sq % 8, '1' + sq / 8 };
+}
 pub const Board = struct {
     pub const fen_start = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     pub const square_count = 64;
@@ -790,6 +793,24 @@ pub const Board = struct {
 
         return this.isSquareAttacked(square_king, color);
     }
+    pub fn result(this: @This(), movelist: Movelist) Result {
+        if (movelist.move_count == 0) {
+            if (this.isCheck(this.side_to_move)) {
+                return switch (this.side_to_move) {
+                    .white => .white,
+                    .black => .black,
+                };
+            } else {
+                return .draw;
+            }
+        } else {
+            if (this.history[this.history_len - 1].fifty_move >= 100) {
+                return .draw;
+            } else {
+                return .none;
+            }
+        }
+    }
     pub fn print(this: @This()) void {
         // Print this way to have a1 be the bottom left square with index 0
         std.debug.print("   a b c d e f g h\n", .{});
@@ -824,24 +845,6 @@ pub const Board = struct {
             },
         });
     }
-    pub fn result(this: @This(), movelist: Movelist) Result {
-        if (movelist.move_count == 0) {
-            if (this.isCheck(this.side_to_move)) {
-                return switch (this.side_to_move) {
-                    .white => .white,
-                    .black => .black,
-                };
-            } else {
-                return .draw;
-            }
-        } else {
-            if (this.history[this.history_len - 1].fifty_move >= 100) {
-                return .draw;
-            } else {
-                return .none;
-            }
-        }
-    }
     pub fn debug(this: @This()) void {
         std.debug.print("      a      b      c      d      e      f      g      h\n", .{});
         for (0..8) |row_idx| {
@@ -873,9 +876,8 @@ pub const Board = struct {
             },
         });
         if (this.history[this.history_len - 1].en_passant_sq != square_invalid) {
-            std.debug.print("En passant: {c}{c} = {}\n", .{
-                'a' + (this.history[this.history_len - 1].en_passant_sq % 8),
-                '1' + @divFloor(this.history[this.history_len - 1].en_passant_sq, 8),
+            std.debug.print("En passant: {s} = {}\n", .{
+                nameOfSq(this.history[this.history_len - 1].en_passant_sq),
                 this.history[this.history_len - 1].en_passant_sq,
             });
         } else {
